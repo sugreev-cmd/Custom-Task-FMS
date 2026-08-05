@@ -257,7 +257,7 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif}
     <button class="l-btn" id="enterBtn">ENTER SYSTEM →</button>
     <div class="l-err" id="lErr"></div>
     <div class="l-foot" id="brandFoot">Task FMS · Confidential</div>
-    <div style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);margin-top:4px" id="buildTag">build v2.3</div>
+    <div style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);margin-top:4px" id="buildTag">build v3.0 &middot; shared settings</div>
   </div>
 </div>
 
@@ -467,7 +467,7 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif}
       <div class="sp-info-box">5 roles. Naam, icon aur access kabhi bhi badal sakte hain — purana data safe rahega. Passwords ab Supabase Auth me hain (🗄 Data tab).</div>
       <div class="rl-hdr"><div>Icon</div><div>Role Name</div><div>Access</div></div>
       <div id="roleInputsWrap"></div>
-      <div class="sp-note">Access: <b>Full</b> = sab kuch + Settings · <b>Team</b> = sirf apni categories · <b>View</b> = read-only</div>
+      <div class="sp-note">Access: <b>Full</b> = sab kuch + Settings · <b>Team</b> = sirf apni categories · <b>View</b> = sab dikhega par read-only<br><b>Team role me koi category tick nahi karenge to usko saari categories dikhengi.</b></div>
       <button class="sp-btn" id="saveRolesBtn">💾 Save Roles</button>
     </div>
 
@@ -532,6 +532,8 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif}
       <div class="sp-label" style="margin-top:14px">Table banane ka SQL</div>
       <textarea class="sp-input" id="sqlBox" readonly style="height:150px;font-family:'JetBrains Mono',monospace;font-size:9px;resize:vertical"></textarea>
       <button class="sp-btn-secondary" onclick="copySql()">📋 Copy SQL</button>
+      <div class="sp-note" style="margin-top:14px">🌐 <b>Shared settings</b> - categories, roles, week off, holidays aur team ab Supabase me save hoti hain, isliye har bande ko ek jaisi milti hain. Sirf Full-access role hi badal sakta hai.</div>
+      <button class="sp-btn-secondary" id="refreshSettingsBtn">↻ Server se settings dobara laao</button>
       <div class="sp-note" style="margin-top:14px">Danger zone</div>
       <button class="sp-btn-secondary" id="resetSettingsBtn" style="color:var(--red);border-color:rgba(255,68,68,.3)">↺ Reset all settings to default</button>
     </div>
@@ -692,9 +694,9 @@ function filterTasksByRole(taskList) {
 var DEFAULT_CATS=[{name:'Category 1',color:'#00BFA5'},{name:'Category 2',color:'#00D4FF'},{name:'Category 3',color:'#B060FF'},{name:'Admin',color:'#FFB800'},{name:'Custom',color:'#FF8C42'}];
 var DEFAULT_ROLES=[
  {key:'r1',name:'Role 1',icon:'\u{1F451}',access:'full',cats:[]},
- {key:'r2',name:'Role 2',icon:'\u{1F4CB}',access:'edit',cats:['Category 1','Admin','Custom']},
- {key:'r3',name:'Role 3',icon:'\u{1F504}',access:'edit',cats:['Category 2','Admin','Custom']},
- {key:'r4',name:'Role 4',icon:'\u{1F9E9}',access:'edit',cats:['Category 3','Admin','Custom']},
+ {key:'r2',name:'Role 2',icon:'\u{1F4CB}',access:'edit',cats:[]},
+ {key:'r3',name:'Role 3',icon:'\u{1F504}',access:'edit',cats:[]},
+ {key:'r4',name:'Role 4',icon:'\u{1F9E9}',access:'edit',cats:[]},
  {key:'r5',name:'Role 5',icon:'\u{1F441}',access:'view',cats:[]}
 ];
 var DEFAULT_SETTINGS={theme:'dark',
@@ -729,7 +731,7 @@ function normalizeSettings(s){
   return s;
 }
 function loadSettings(){try{var s=localStorage.getItem('taskfms_settings_v1');if(s)return normalizeSettings(Object.assign({},JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),JSON.parse(s)));}catch(e){}return normalizeSettings(JSON.parse(JSON.stringify(DEFAULT_SETTINGS)));}
-function saveSettings(s){try{localStorage.setItem('taskfms_settings_v1',JSON.stringify(s));}catch(e){}}
+function saveSettings(s){try{localStorage.setItem('taskfms_settings_v1',JSON.stringify(s));}catch(e){}if(typeof schedulePush==='function')schedulePush();}
 
 /* ===== ROLE / CATEGORY / BRAND HELPERS ===== */
 function curRole(){return (SETTINGS.roles||[]).filter(function(r){return r.key===currentRole;})[0]||null;}
@@ -1112,6 +1114,88 @@ function importFromEapc(){
   showToast(added+' holidays'+(tm?' + '+tm+' team members':'')+' import ho gaye','s');
 }
 
+
+/* ======================================================
+   SHARED SETTINGS  -  Supabase me rakhi, sabko ek jaisi milengi
+   ====================================================== */
+var STABLE='task_fms_settings';
+var SHARED_KEYS=['brand','roles','categories','weekOffDays','workDates','holidays','teamMembers',
+                 'auth','ownerEmail','resendKey','senderEmail','reminderTime','emailDaily','emailNew','emailOverdue'];
+var remoteReady=false, _pushTimer=null;
+
+function sharedPayload(){
+  var o={};
+  SHARED_KEYS.forEach(function(k){ if(SETTINGS[k]!==undefined) o[k]=SETTINGS[k]; });
+  return o;
+}
+function adminRoles(){
+  var l=(SETTINGS.roles||[]).filter(function(r){return r.access==='full';}).map(function(r){return r.key;});
+  if(currentRole&&l.indexOf(currentRole)<0&&isAdmin())l.push(currentRole);
+  if(!l.length)l=['r1'];
+  return l;
+}
+function setSyncPill(txt,cls){
+  var el=document.getElementById('syncTxt');
+  if(el&&txt)el.textContent=txt;
+  var d=document.getElementById('syncDot');
+  if(d&&cls)d.className='sync-dot '+cls;
+}
+function fetchRemoteSettings(){
+  return sbFetch('/'+STABLE+'?id=eq.main&select=data,admin_roles,updated_at','GET').then(function(rows){
+    if(!rows||!rows.length)return null;
+    var r=rows[0], data=r.data||{};
+    var merged=Object.assign({},SETTINGS);
+    SHARED_KEYS.forEach(function(k){ if(data[k]!==undefined) merged[k]=data[k]; });
+    SETTINGS=normalizeSettings(merged);
+    try{localStorage.setItem('taskfms_settings_v1',JSON.stringify(SETTINGS));}catch(e){}
+    remoteReady=true;
+    return r;
+  });
+}
+function pushRemoteSettings(){
+  if(!isAdmin())return Promise.resolve();
+  var body={data:sharedPayload(),admin_roles:adminRoles(),updated_at:new Date().toISOString(),updated_by:currentRole};
+  return sbFetch('/'+STABLE+'?id=eq.main','PATCH',body).then(function(){
+    setSyncPill('Synced','saved');
+  }).catch(function(e){
+    console.error('settings push failed',e);
+    showToast('Settings sirf is browser me save hui - server par nahi ja saki','e');
+  });
+}
+function schedulePush(){
+  if(!remoteReady||!isAdmin())return;
+  if(_pushTimer)clearTimeout(_pushTimer);
+  _pushTimer=setTimeout(function(){_pushTimer=null;pushRemoteSettings();},800);
+}
+function applyRemoteSettingsToUI(){
+  applyDb();applyTheme(SETTINGS.theme);applyBrand();renderLoginRoles();
+  renderCatFilters();populateCatSelects();populateAssignDropdowns();
+  var rp=document.getElementById('rolePill');if(rp)rp.textContent=roleLabel(currentRole);
+  if(document.getElementById('settingsOverlay').classList.contains('open'))populateSettingsInputs();
+}
+function pullSettingsThen(cb){
+  fetchRemoteSettings().then(function(r){
+    if(r){applyRemoteSettingsToUI();setSyncPill('Settings synced','saved');}
+    else if(isAdmin()){
+      // pehli baar: is browser ki settings ko server par bhej do
+      sbFetch('/'+STABLE,'POST',{id:'main',data:sharedPayload(),admin_roles:adminRoles(),updated_by:currentRole})
+        .then(function(){remoteReady=true;setSyncPill('Settings uploaded','saved');})
+        .catch(function(e){console.error(e);});
+    }
+    if(cb)cb();
+  }).catch(function(e){
+    console.error('settings fetch failed',e);
+    showToast('Server settings nahi mili - is browser wali chal rahi hain','i');
+    if(cb)cb();
+  });
+}
+function refreshSettingsNow(){
+  fetchRemoteSettings().then(function(r){
+    if(!r){showToast('Server par settings nahi hain','e');return;}
+    applyRemoteSettingsToUI();buildAll();showToast('Settings server se aa gayi','s');
+  }).catch(function(){showToast('Refresh fail hua','e');});
+}
+
 var overdueEmailsSent=[];
 function checkAndSendOverdueEmails(tasks){if(!SETTINGS.emailOverdue||!SETTINGS.resendKey)return;var curYM=getYM();filterTasksByRole(tasks).filter(function(t){return t.monthKey===curYM&&calcStatus(t)==='Overdue'&&!t.actualDate;}).forEach(function(t){if(overdueEmailsSent.indexOf(t.id)<0){overdueEmailsSent.push(t.id);emailOverdueAlert(t);}});}
 function checkDailyReminder(tasks){if(!SETTINGS.emailDaily||!SETTINGS.resendKey)return;var now=new Date();var todayStr=today();if(SETTINGS.lastReminderDate===todayStr)return;var parts=(SETTINGS.reminderTime||'09:00').split(':');if(now.getHours()>parseInt(parts[0])||(now.getHours()===parseInt(parts[0])&&now.getMinutes()>=parseInt(parts[1]||0))){var due=filterTasksByRole(tasks).filter(function(t){return t.dueDate===todayStr&&!t.actualDate;});if(due.length){emailDailyReminder(due);SETTINGS.lastReminderDate=todayStr;saveSettings(SETTINGS);}}}
@@ -1320,7 +1404,7 @@ function doLogin(){
   });
 }
 function doLogout(){clearAuth();try{sessionStorage.removeItem('taskfms_role');}catch(e){}currentRole=null;document.getElementById('appPage').classList.remove('active');document.getElementById('loginPage').classList.add('active');document.getElementById('passInput').value='';document.querySelectorAll('.l-role-btn').forEach(function(b){b.classList.remove('sel');});selRole=null;document.getElementById('enterBtn').textContent='ENTER SYSTEM →';document.getElementById('enterBtn').style='';}
-function enterApp(){document.getElementById('loginPage').classList.remove('active');document.getElementById('appPage').classList.add('active');document.getElementById('rolePill').textContent=roleLabel(currentRole);var _ro=isRO();document.getElementById('addTaskBtn').style.display=_ro?'none':'';document.getElementById('addRowBtn').style.display=_ro?'none':'';document.getElementById('settingsBtn').style.display=isAdmin()?'':'none';applyBrand();renderCatFilters();populateCatSelects();populateMonthSelects();populateAssignDropdowns();loadData();}
+function enterApp(){pullSettingsThen(null);document.getElementById('loginPage').classList.remove('active');document.getElementById('appPage').classList.add('active');document.getElementById('rolePill').textContent=roleLabel(currentRole);var _ro=isRO();document.getElementById('addTaskBtn').style.display=_ro?'none':'';document.getElementById('addRowBtn').style.display=_ro?'none':'';document.getElementById('settingsBtn').style.display=isAdmin()?'':'none';applyBrand();renderCatFilters();populateCatSelects();populateMonthSelects();populateAssignDropdowns();loadData();}
 function showView(v){document.querySelectorAll('.view').forEach(function(e){e.classList.remove('active');});document.querySelectorAll('.tb-ni').forEach(function(e){e.classList.remove('active');});document.getElementById('view-'+v).classList.add('active');document.getElementById('nav-'+v).classList.add('active');buildAll();}
 function openMo(id){document.getElementById(id).classList.add('open');}
 function closeMo(id){document.getElementById(id).classList.remove('open');}
@@ -1345,6 +1429,7 @@ window.onload=function(){
   document.getElementById('importEapcBtn').addEventListener('click',importFromEapc);
   document.getElementById('saveAuthBtn').addEventListener('click',saveAuthEmails);
   document.getElementById('changePwBtn').addEventListener('click',changeMyPassword);
+  document.getElementById('refreshSettingsBtn').addEventListener('click',refreshSettingsNow);
   document.getElementById('resetSettingsBtn').addEventListener('click',resetSettings);
   document.getElementById('xlFile').addEventListener('change',function(e){var file=e.target.files[0];if(file)handleHolidayFile(file);this.value='';});
   var dropZone=document.getElementById('xlDropZone');
