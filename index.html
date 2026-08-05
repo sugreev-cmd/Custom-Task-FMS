@@ -257,7 +257,7 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif}
     <button class="l-btn" id="enterBtn">ENTER SYSTEM →</button>
     <div class="l-err" id="lErr"></div>
     <div class="l-foot" id="brandFoot">Task FMS · Confidential</div>
-    <div style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);margin-top:4px" id="buildTag">build AUTH-v2.1 · secured login</div>
+    <div style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);margin-top:4px" id="buildTag">build v2.2 · bulk add</div>
   </div>
 </div>
 
@@ -402,6 +402,7 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif}
       <div class="sp-tab" onclick="switchSpTab('team',this)">👥 Team</div>
       <div class="sp-tab" onclick="switchSpTab('email',this)">📧 Email</div>
       <div class="sp-tab" onclick="switchSpTab('holidays',this)">📅 Holidays</div>
+      <div class="sp-tab" onclick="switchSpTab('bulk',this)">📥 Bulk Add</div>
       <div class="sp-tab" onclick="switchSpTab('data',this)">🗄 Data</div>
     </div>
     <div class="sp-tab-content" id="sptab-team">
@@ -448,6 +449,7 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif}
       </div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);text-transform:uppercase;margin-bottom:8px">Holidays <span id="hlCount" style="color:var(--teal)">(0)</span></div>
       <div id="holidayListWrap" style="max-height:200px;overflow-y:auto"></div>
+      <button class="sp-btn-secondary" id="importEapcBtn">📥 EA-PC FMS se holidays laao</button>
       <button class="sp-btn" id="saveHolidaysBtn">💾 Save Holidays</button>
       <button class="sp-btn-secondary" id="clearHolidaysBtn">🗑 Clear All</button>
     </div>
@@ -490,6 +492,28 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif}
       <button class="sp-btn" id="saveWeekOffBtn">💾 Save Week Off</button>
     </div>
 
+    <div class="sp-tab-content" id="sptab-bulk">
+      <div class="sp-info-box">Ek list paste kariye — har line ek task. Tasks banate waqt app aapki apni <b>Week Off</b> aur <b>Holidays</b> settings ka dhyaan rakhega. Dobara import karne par duplicate nahi banenge.</div>
+      <div class="sp-label">Task list (ek line = ek task)</div>
+      <textarea class="sp-input" id="bulk-list" style="height:140px;resize:vertical;font-size:11px" placeholder="Hall 4 Cleaning floors&#10;Hall 4 Cleaning carpet&#10;Pantry Refill handsoap"></textarea>
+      <label class="rl-cat" style="margin:8px 0;display:inline-flex"><input type="checkbox" id="bulk-clean" checked> Bracket me likhi Hindi / dusri bhasha hata do</label>
+      <div class="sp-label">Category</div><select class="sp-input" id="bulk-section"></select>
+      <div class="sp-label">Assign to</div><input class="sp-input" id="bulk-assign" placeholder="e.g. Vandana">
+      <div class="sp-label">Frequency</div>
+      <select class="sp-input" id="bulk-freq">
+        <option value="Daily" selected>Daily</option>
+        <option value="Weekly">Weekly</option>
+        <option value="Monthly">Monthly</option>
+        <option value="One-time">One-time</option>
+      </select>
+      <div style="display:grid;grid-template-columns:1fr 90px;gap:6px">
+        <div><div class="sp-label">Start date</div><input class="sp-input" type="date" id="bulk-start"></div>
+        <div><div class="sp-label">Mahine</div><input class="sp-input" type="number" id="bulk-months" value="12" min="1" max="24"></div>
+      </div>
+      <button class="sp-btn-secondary" id="bulkPreviewBtn">&#128065; Preview</button>
+      <div class="sp-note" id="bulk-preview">Preview dabaiye — kitne tasks banenge dikh jayega.</div>
+      <button class="sp-btn" id="bulkImportBtn">&#128229; Import Tasks</button>
+    </div>
     <div class="sp-tab-content" id="sptab-data">
       <div class="sp-info-box">Supabase connection. Har FMS ka apna table hona chahiye, warna data mix ho jayega.</div>
       <div class="sp-label">Supabase URL</div><input class="sp-input" id="sp-db-url" placeholder="https://xxxx.supabase.co">
@@ -741,7 +765,7 @@ function toWorkingDay(dateStr){var d=new Date(dateStr);var safety=0;while(!isWor
 function switchSpTab(name,el){document.querySelectorAll('.sp-tab').forEach(function(t){t.classList.remove('active');});document.querySelectorAll('.sp-tab-content').forEach(function(t){t.classList.remove('active');});el.classList.add('active');document.getElementById('sptab-'+name).classList.add('active');}
 function openSettings(){if(!isAdmin()){showToast('Settings: full-access role only','e');return;}populateSettingsInputs();document.getElementById('settingsOverlay').classList.add('open');}
 function closeSettings(){document.getElementById('settingsOverlay').classList.remove('open');}
-function populateSettingsInputs(){setVal('sp-owner-email',SETTINGS.ownerEmail);setVal('sp-resend-key',SETTINGS.resendKey);setVal('sp-sender-email',SETTINGS.senderEmail);setVal('sp-reminder-time',SETTINGS.reminderTime||'09:00');setChk('sp-email-daily',SETTINGS.emailDaily);setChk('sp-email-new',SETTINGS.emailNew);setChk('sp-email-overdue',SETTINGS.emailOverdue);applyTheme(SETTINGS.theme);renderBrandInputs();renderRoleInputs();renderCatInputs();renderWeekOffInputs();renderDbInputs();renderAuthInputs();renderTeamInputs();renderHolidayList();}
+function populateSettingsInputs(){setVal('sp-owner-email',SETTINGS.ownerEmail);setVal('sp-resend-key',SETTINGS.resendKey);setVal('sp-sender-email',SETTINGS.senderEmail);setVal('sp-reminder-time',SETTINGS.reminderTime||'09:00');setChk('sp-email-daily',SETTINGS.emailDaily);setChk('sp-email-new',SETTINGS.emailNew);setChk('sp-email-overdue',SETTINGS.emailOverdue);applyTheme(SETTINGS.theme);renderBrandInputs();renderRoleInputs();renderCatInputs();renderWeekOffInputs();renderDbInputs();renderAuthInputs();renderTeamInputs();renderHolidayList();var bs=document.getElementById('bulk-start');if(bs&&!bs.value)bs.value=today();populateCatSelects();}
 function setVal(id,v){var el=document.getElementById(id);if(el)el.value=v||'';}
 function setChk(id,v){var el=document.getElementById(id);if(el)el.checked=!!v;}
 function renderTeamInputs(){var wrap=document.getElementById('teamMembersWrap');if(!wrap)return;var members=SETTINGS.teamMembers||[];wrap.innerHTML=members.map(function(m,i){return'<div class="tm-row" data-idx="'+i+'"><input class="sp-input" style="font-size:11px;padding:6px 8px" placeholder="Name" value="'+escH(m.name||'')+'" data-field="name"><input class="sp-input" style="font-size:11px;padding:6px 8px" placeholder="Role" value="'+escH(m.position||'')+'" data-field="position"><input class="sp-input" style="font-size:11px;padding:6px 8px" placeholder="email@company.com" value="'+escH(m.email||'')+'" data-field="email" type="email"><button class="tm-del" onclick="removeTeamMember('+i+')">✕</button></div>';}).join('');}
@@ -938,6 +962,156 @@ function resetSettings(){
   showToast('✓ Settings reset','s');
 }
 
+
+/* ======================================================
+   BULK ADD - list paste karo, week-off + holidays apne aap lagenge
+   ====================================================== */
+function taskToRow(t){return {id:t.id,section:t.section,name:t.name,freq:t.freq,due_date:t.dueDate,
+  actual_date:t.actualDate||null,status:t.status,assigned_to:t.assign||'',notes:t.notes||'',
+  month_key:t.monthKey,is_custom:!!t.isCustom,proof_link:t.proofLink||'',updated_at:new Date().toISOString()};}
+function _h1(s){var h=5381;for(var i=0;i<s.length;i++){h=(((h<<5)+h)+s.charCodeAt(i))>>>0;}return h.toString(36);}
+function _h2(s){var h=0;for(var i=0;i<s.length;i++){h=(s.charCodeAt(i)+(h<<6)+(h<<16)-h)>>>0;}return h.toString(36);}
+function bulkId(sec,name,date){var k=sec+'|'+name+'|'+date;return 'B'+_h1(k)+'-'+_h2(k);}
+function _firstNonLatin(s){
+  for(var i=0;i<s.length;i++){
+    var c=s.charCodeAt(i);
+    if(c>0x24F && !(c>=0x2000 && c<=0x206F)) return i;
+  }
+  return -1;
+}
+function bulkNames(){
+  var el=document.getElementById('bulk-list');
+  var raw=el?(el.value||''):'';
+  var cb=document.getElementById('bulk-clean');
+  var doClean=cb?!!cb.checked:true;
+  var out=[],seen={};
+  raw.split('\n').forEach(function(l){
+    var s=l;
+    if(doClean){
+      var at=_firstNonLatin(s);
+      if(at>=0){var i=s.lastIndexOf('(',at);s=(i>=0?s.slice(0,i):s.slice(0,at));}
+    }
+    s=s.replace(/\s+/g,' ').trim();
+    if(!s)return;
+    var k=s.toLowerCase();
+    if(seen[k])return;
+    seen[k]=1;out.push(s);
+  });
+  return out;
+}
+function _ymd(d){return d.toISOString().split('T')[0];}
+function _addMonthsUTC(str,n){
+  var p=str.split('-'),y=+p[0],m=+p[1]-1,day=+p[2];
+  var t=new Date(Date.UTC(y,m+n,1));
+  var mx=new Date(Date.UTC(t.getUTCFullYear(),t.getUTCMonth()+1,0)).getUTCDate();
+  return _ymd(new Date(Date.UTC(t.getUTCFullYear(),t.getUTCMonth(),Math.min(day,mx))));
+}
+function bulkDates(freq,startStr,months){
+  if(!startStr)return [];
+  var endStr=_addMonthsUTC(startStr,months),dates=[];
+  if(freq==='One-time')return [toWorkingDay(startStr)];
+  if(freq==='Daily'||freq==='Weekly'){
+    var step=(freq==='Daily')?1:7;
+    var d=new Date(startStr+'T00:00:00Z'),end=new Date(endStr+'T00:00:00Z');
+    while(d<=end){
+      var ds=_ymd(d);
+      if(freq==='Daily'){if(isWorkingDay(ds))dates.push(ds);}
+      else dates.push(toWorkingDay(ds));
+      d.setUTCDate(d.getUTCDate()+step);
+    }
+    return dates;
+  }
+  for(var i=0;i<=months;i++){
+    var ds2=_addMonthsUTC(startStr,i);
+    if(ds2>endStr)break;
+    dates.push(toWorkingDay(ds2));
+  }
+  return dates;
+}
+function bulkBuild(){
+  var names=bulkNames();
+  var g=function(id,dflt){var e=document.getElementById(id);return (e&&e.value)?e.value:dflt;};
+  var section=g('bulk-section',catNames()[0]);
+  var assign=g('bulk-assign','').trim();
+  var freq=g('bulk-freq','Daily');
+  var start=g('bulk-start',today());
+  var months=parseInt(g('bulk-months','12'),10);
+  if(!(months>0))months=12;
+  var dates=bulkDates(freq,start,months),rows=[];
+  names.forEach(function(n){dates.forEach(function(ds){
+    rows.push({id:bulkId(section,n,ds),section:section,name:n,freq:freq,dueDate:ds,actualDate:'',
+               status:'Pending',assign:assign,notes:'',monthKey:ds.substring(0,7),isCustom:true,proofLink:''});
+  });});
+  return {names:names,dates:dates,rows:rows};
+}
+function bulkPreview(){
+  var b=bulkBuild(),el=document.getElementById('bulk-preview');
+  if(!el)return b;
+  if(!b.names.length){el.innerHTML='List khaali hai.';return b;}
+  if(!b.dates.length){el.innerHTML='Koi working day nahi mila - Week Off settings check kariye.';return b;}
+  el.innerHTML='<b>'+b.names.length+'</b> unique tasks x <b>'+b.dates.length+'</b> din = <b>'+b.rows.length+'</b> rows<br>'
+    +'Pehla: '+fmtDate(b.dates[0])+' &middot; Aakhri: '+fmtDate(b.dates[b.dates.length-1])
+    +'<br>Off days aur holidays hata diye gaye hain.';
+  return b;
+}
+function sbBulk(rows,_retry){
+  var hdr=Object.assign(authHeaders(),{'Prefer':'resolution=merge-duplicates,return=minimal'});
+  return fetch(SB_URL+'/rest/v1/'+TABLE+'?on_conflict=id',{method:'POST',headers:hdr,body:JSON.stringify(rows)})
+   .then(function(r){
+    if((r.status===401||r.status===403)&&!_retry){
+      return refreshSession().then(function(){return sbBulk(rows,true);},function(){sessionExpired();throw new Error('Session expired');});
+    }
+    if(!r.ok)return r.text().then(function(t){throw new Error(t);});
+    return null;
+  });
+}
+function bulkImportRun(){
+  var b=bulkBuild();
+  if(!b.rows.length){showToast('Import karne ko kuch nahi hai','e');return;}
+  if(!confirm(b.rows.length+' tasks import karein?'))return;
+  var batches=[],i;
+  for(i=0;i<b.rows.length;i+=500)batches.push(b.rows.slice(i,i+500));
+  var done=0,el=document.getElementById('bulk-preview');
+  setSS('saving','Importing 0/'+b.rows.length);
+  batches.reduce(function(p,batch){
+    return p.then(function(){
+      return sbBulk(batch.map(taskToRow)).then(function(){
+        done+=batch.length;
+        setSS('saving','Importing '+done+'/'+b.rows.length);
+        if(el)el.innerHTML='Importing <b>'+done+'</b> / '+b.rows.length+' ...';
+      });
+    });
+  },Promise.resolve()).then(function(){
+    setSS('saved','Saved');
+    if(el)el.innerHTML='<b>'+done+'</b> tasks import ho gaye.';
+    showToast(done+' tasks import ho gaye','s');
+    loadedMonths={};allTasks=[];tasks=[];loadData();
+  }).catch(function(e){
+    setSS('err','Failed');console.error(e);
+    if(el)el.innerHTML='Import fail hua: '+escH(String(e.message).slice(0,120));
+    showToast('Import failed','e');
+  });
+}
+function importFromEapc(){
+  var raw=null;try{raw=localStorage.getItem('eapc_settings_v1');}catch(e){}
+  if(!raw){showToast('EA-PC FMS ki settings is browser me nahi mili - pehle wo app ek baar kholein','e');return;}
+  var old;try{old=JSON.parse(raw);}catch(e){showToast('Purani settings padhi nahi ja saki','e');return;}
+  if(!SETTINGS.holidays)SETTINGS.holidays=[];
+  if(!SETTINGS.teamMembers)SETTINGS.teamMembers=[];
+  var added=0,tm=0;
+  (old.holidays||[]).forEach(function(h){
+    if(h&&h.date&&!SETTINGS.holidays.some(function(x){return x.date===h.date;})){
+      SETTINGS.holidays.push({date:h.date,name:h.name||'Holiday'});added++;}
+  });
+  (old.teamMembers||[]).forEach(function(m){
+    if(m&&m.name&&!SETTINGS.teamMembers.some(function(x){return x.name===m.name;})){
+      SETTINGS.teamMembers.push({name:m.name,position:m.position||'',email:m.email||''});tm++;}
+  });
+  saveSettings(SETTINGS);renderHolidayList();renderTeamInputs();populateAssignDropdowns();
+  if(!added&&!tm){showToast('Kuch naya nahi mila - sab pehle se hai','i');return;}
+  showToast(added+' holidays'+(tm?' + '+tm+' team members':'')+' import ho gaye','s');
+}
+
 var overdueEmailsSent=[];
 function checkAndSendOverdueEmails(tasks){if(!SETTINGS.emailOverdue||!SETTINGS.resendKey)return;var curYM=getYM();filterTasksByRole(tasks).filter(function(t){return t.monthKey===curYM&&calcStatus(t)==='Overdue'&&!t.actualDate;}).forEach(function(t){if(overdueEmailsSent.indexOf(t.id)<0){overdueEmailsSent.push(t.id);emailOverdueAlert(t);}});}
 function checkDailyReminder(tasks){if(!SETTINGS.emailDaily||!SETTINGS.resendKey)return;var now=new Date();var todayStr=today();if(SETTINGS.lastReminderDate===todayStr)return;var parts=(SETTINGS.reminderTime||'09:00').split(':');if(now.getHours()>parseInt(parts[0])||(now.getHours()===parseInt(parts[0])&&now.getMinutes()>=parseInt(parts[1]||0))){var due=filterTasksByRole(tasks).filter(function(t){return t.dueDate===todayStr&&!t.actualDate;});if(due.length){emailDailyReminder(due);SETTINGS.lastReminderDate=todayStr;saveSettings(SETTINGS);}}}
@@ -957,7 +1131,17 @@ function daysDiff(a,b){return Math.round((new Date(b)-new Date(a))/86400000);}
 function getWeekNum(dateStr){var d=new Date(dateStr);return Math.ceil(d.getDate()/7);}
 function getMonthOptions(){var now=new Date();var opts=[];for(var i=-5;i<=12;i++){var d=new Date(now.getFullYear(),now.getMonth()+i,1);var ym=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');opts.push({ym:ym,label:MON[d.getMonth()]+' '+d.getFullYear()});}return opts;}
 function populateMonthSelects(){var opts=getMonthOptions();var cur=getYM();var html=opts.map(function(o){return'<option value="'+o.ym+'"'+(o.ym===cur?' selected':'')+'>'+o.label+'</option>';}).join('');document.getElementById('taskMonthSel').innerHTML=html;document.getElementById('misMonthSel').innerHTML=html;}
-function populateCatSelects(){var el=document.getElementById('at-section');if(!el)return;var prev=el.value;var r=curRole();var allowed=(r&&r.access==='edit'&&(r.cats||[]).length)?r.cats:catNames();el.innerHTML=allowed.map(function(c){return'<option>'+escH(c)+'</option>';}).join('');if(allowed.indexOf(prev)>-1)el.value=prev;}
+function populateCatSelects(){
+  var r=curRole();
+  var allowed=(r&&r.access==='edit'&&(r.cats||[]).length)?r.cats:catNames();
+  ['at-section','bulk-section'].forEach(function(id){
+    var el=document.getElementById(id);if(!el)return;
+    var prev=el.value;
+    el.innerHTML=allowed.map(function(c){return'<option>'+escH(c)+'</option>';}).join('');
+    if(allowed.indexOf(prev)>-1)el.value=prev;
+  });
+}
+
 function renderCatFilters(){var w=document.getElementById('catFltWrap');if(!w)return;w.innerHTML=catNames().map(function(c){return'<button class="flt-btn" data-f="'+escH(c)+'">'+escH(c)+'</button>';}).join('');bindCatFilters();}
 function bindCatFilters(){document.querySelectorAll('#view-tasks .flt-btn[data-f]').forEach(function(btn){btn.onclick=function(){taskFilt=btn.getAttribute('data-f');document.querySelectorAll('#view-tasks .flt-btn[data-f]').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');buildTasksView(document.getElementById('taskMonthSel').value||getYM());};});}
 function renderLoginRoles(){var w=document.getElementById('loginRoles');if(!w)return;w.innerHTML=(SETTINGS.roles||DEFAULT_ROLES).map(function(r){return'<button class="l-role-btn" type="button" onclick="pickRole(\''+r.key+'\',this)"><div class="l-role-chk">\u2713</div><div class="l-role-icon">'+escH(r.icon)+'</div><div class="l-role-name">'+escH(r.name)+'</div></button>';}).join('');}
@@ -1156,6 +1340,9 @@ window.onload=function(){
   document.getElementById('saveWeekOffBtn').addEventListener('click',saveWeekOff);
   document.getElementById('saveDbBtn').addEventListener('click',saveDb);
   document.getElementById('testDbBtn').addEventListener('click',testDb);
+  document.getElementById('bulkPreviewBtn').addEventListener('click',bulkPreview);
+  document.getElementById('bulkImportBtn').addEventListener('click',bulkImportRun);
+  document.getElementById('importEapcBtn').addEventListener('click',importFromEapc);
   document.getElementById('saveAuthBtn').addEventListener('click',saveAuthEmails);
   document.getElementById('changePwBtn').addEventListener('click',changeMyPassword);
   document.getElementById('resetSettingsBtn').addEventListener('click',resetSettings);
