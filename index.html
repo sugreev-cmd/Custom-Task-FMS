@@ -28,8 +28,8 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif}
 @keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
 .sp-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--bd);background:var(--s3);position:sticky;top:0;z-index:2;}
 .sp-title{font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--teal);letter-spacing:1px;}
-.sp-tabs{display:flex;border-bottom:1px solid var(--bd);background:var(--s2);}
-.sp-tab{flex:1;padding:10px;font-size:10px;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--dim);cursor:pointer;text-align:center;border-bottom:2px solid transparent;transition:all .2s;text-transform:uppercase;letter-spacing:.5px;}
+.sp-tabs{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--bd);background:var(--s2);}
+.sp-tab{flex:1 1 auto;min-width:82px;padding:9px 5px;font-size:9px;line-height:1.25;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--dim);cursor:pointer;text-align:center;border-bottom:2px solid transparent;transition:all .2s;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;}
 .sp-tab.active{color:var(--teal);border-bottom-color:var(--teal);}
 .sp-tab-content{display:none;padding:16px 20px;}.sp-tab-content.active{display:block}
 .sp-label{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;margin-top:14px;}
@@ -257,7 +257,7 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif}
     <button class="l-btn" id="enterBtn">ENTER SYSTEM →</button>
     <div class="l-err" id="lErr"></div>
     <div class="l-foot" id="brandFoot">Task FMS · Confidential</div>
-    <div style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);margin-top:4px" id="buildTag">build v2.2 · bulk add</div>
+    <div style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);margin-top:4px" id="buildTag">build v2.3</div>
   </div>
 </div>
 
