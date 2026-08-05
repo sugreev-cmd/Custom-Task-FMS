@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="pageTitle">Task FMS</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+[data-theme="dark"]{--bg:#07090F;--sf:#0D1117;--s2:#131820;--s3:#181F2A;--s4:#1E2736;--bd:#1F2D42;--bd2:#2A3D58;--text:#E8F0FE;--sub:#7A90B0;--dim:#3A5070;--card-bg:#0D1117;--table-head:#131820;}
+[data-theme="light"]{--bg:#F0F4F8;--sf:#FFFFFF;--s2:#F8FAFB;--s3:#EEF2F6;--s4:#E4EBF0;--bd:#D0DAE8;--bd2:#B0C0D8;--text:#1A2540;--sub:#4A5F80;--dim:#8FA0BE;--card-bg:#FFFFFF;--table-head:#F0F4F8;}
+:root{--cyan:#00D4FF;--cyan2:rgba(0,212,255,.12);--gold:#FFB800;--gold2:rgba(255,184,0,.12);--green:#00E676;--green2:rgba(0,230,118,.1);--red:#FF4444;--red2:rgba(255,68,68,.1);--purple:#B060FF;--purple2:rgba(176,96,255,.1);--orange:#FF8C42;--orange2:rgba(255,140,66,.1);--blue:#4488FF;--blue2:rgba(68,136,255,.1);--teal:#00BFA5;--teal2:rgba(0,191,165,.1);}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:13px;transition:background .25s,color .25s}
+::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:2px}
+input,select,textarea,button{font-family:'DM Sans',sans-serif}
+.page{display:none}.page.active{display:flex}
+.theme-toggle{width:44px;height:24px;border-radius:12px;background:var(--s3);border:1px solid var(--bd);cursor:pointer;position:relative;transition:all .25s;flex-shrink:0;}
+.theme-toggle::before{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--teal);transition:transform .25s,background .25s;}
+[data-theme="light"] .theme-toggle::before{transform:translateX(20px);background:var(--gold);}
+.theme-icons{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;padding:0 5px;pointer-events:none;font-size:9px;}
+.settings-btn{width:30px;height:30px;border-radius:8px;border:1px solid var(--bd);background:none;color:var(--sub);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.settings-btn:hover{border-color:var(--teal);color:var(--teal)}
+.settings-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;backdrop-filter:blur(6px);}
+.settings-overlay.open{display:flex;align-items:flex-start;justify-content:flex-end}
+.settings-panel{width:400px;height:100vh;background:var(--sf);border-left:1px solid var(--bd);overflow-y:auto;animation:slideIn .25s ease;}
+@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.sp-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--bd);background:var(--s3);position:sticky;top:0;z-index:2;}
+.sp-title{font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--teal);letter-spacing:1px;}
+.sp-tabs{display:flex;border-bottom:1px solid var(--bd);background:var(--s2);}
+.sp-tab{flex:1;padding:10px;font-size:10px;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--dim);cursor:pointer;text-align:center;border-bottom:2px solid transparent;transition:all .2s;text-transform:uppercase;letter-spacing:.5px;}
+.sp-tab.active{color:var(--teal);border-bottom-color:var(--teal);}
+.sp-tab-content{display:none;padding:16px 20px;}.sp-tab-content.active{display:block}
+.sp-label{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;margin-top:14px;}
+.sp-input{width:100%;background:var(--s3);border:1.5px solid var(--bd);border-radius:8px;color:var(--text);font-size:12px;padding:8px 10px;outline:none;transition:all .2s;}
+.sp-input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(0,191,165,.08)}
+.sp-btn{width:100%;padding:10px;background:linear-gradient(135deg,rgba(0,191,165,.2),rgba(0,191,165,.1));border:1px solid rgba(0,191,165,.4);border-radius:8px;color:var(--teal);font-size:11px;font-weight:700;cursor:pointer;margin-top:8px;}
+.sp-btn:hover{box-shadow:0 0 16px rgba(0,191,165,.15)}
+.sp-btn-secondary{width:100%;padding:9px;background:none;border:1.5px solid var(--bd);border-radius:8px;color:var(--dim);font-size:11px;cursor:pointer;margin-top:6px;}
+.sp-btn-secondary:hover{border-color:var(--red);color:var(--red)}
+.sp-info-box{background:var(--teal2);border:1px solid rgba(0,191,165,.2);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--teal);margin-top:8px;line-height:1.6;}
+.sp-warn-box{background:var(--gold2);border:1px solid rgba(255,184,0,.2);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--gold);margin-top:8px;line-height:1.6;}
+.tm-row{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:6px;align-items:center;margin-bottom:8px;}
+.tm-del{width:28px;height:28px;background:var(--red2);border:1px solid rgba(255,68,68,.3);border-radius:7px;color:var(--red);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.hl-row{display:flex;align-items:center;gap:6px;margin-bottom:7px;}
+.hl-date{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--teal);min-width:80px;}
+.hl-name{flex:1;font-size:11px;color:var(--text);}
+.hl-del{width:24px;height:24px;background:var(--red2);border:1px solid rgba(255,68,68,.3);border-radius:5px;color:var(--red);font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+#loginPage{align-items:center;justify-content:center;min-height:100vh;width:100%;background:radial-gradient(ellipse 80% 60% at 20% 10%,rgba(0,191,165,.06),transparent 60%),radial-gradient(ellipse 60% 80% at 80% 90%,rgba(0,212,255,.04),transparent 60%),var(--bg);}
+.lcard{background:linear-gradient(160deg,var(--s2),var(--sf));border:1px solid var(--bd);border-radius:16px;width:420px;padding:40px 32px 32px;position:relative;z-index:1;box-shadow:0 40px 80px rgba(0,0,0,.6);animation:cardIn .4s ease both;}
+@keyframes cardIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.lcard::before{content:'';position:absolute;top:0;left:15%;right:15%;height:1px;background:linear-gradient(90deg,transparent,var(--teal),transparent);opacity:.5;}
+.l-brand{text-align:center;margin-bottom:20px}
+.l-brand-logo{width:60px;height:60px;border-radius:16px;background:linear-gradient(135deg,rgba(0,191,165,.2),rgba(0,191,165,.05));border:1px solid rgba(0,191,165,.4);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 14px;box-shadow:0 0 24px rgba(0,191,165,.2);}
+.l-brand-name{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;letter-spacing:2px;color:var(--text);}
+.l-brand-name span{color:var(--teal)}
+.l-brand-sub{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--dim);margin-top:4px;text-transform:uppercase;}
+.l-theme-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px;font-size:10px;color:var(--dim);}
+.l-roles-label{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:10px;}
+.l-roles{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:20px}
+.l-role-btn{background:var(--s3);border:1.5px solid var(--bd);border-radius:9px;padding:12px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:all .2s;position:relative;}
+.l-role-btn *{pointer-events:none}
+.l-role-btn:hover{border-color:var(--teal);background:var(--teal2)}
+.l-role-btn.sel{border-color:var(--teal);background:var(--teal2);box-shadow:0 0 0 2px rgba(0,191,165,.15)}
+.l-role-icon{font-size:20px}.l-role-name{font-size:11px;font-weight:600;color:var(--sub);transition:color .2s;text-align:center}
+.l-role-btn:hover .l-role-name,.l-role-btn.sel .l-role-name{color:var(--teal)}
+.l-role-chk{position:absolute;top:6px;right:7px;width:14px;height:14px;border-radius:50%;background:var(--teal);color:var(--bg);font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(0);transition:all .2s;}
+.l-role-btn.sel .l-role-chk{opacity:1;transform:scale(1)}
+.l-sep{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.l-sep-line{flex:1;height:1px;background:var(--bd)}
+.l-sep-txt{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);letter-spacing:1px;text-transform:uppercase}
+.l-pass-wrap{position:relative;margin-bottom:14px}
+.l-pass{width:100%;padding:12px 40px 12px 14px;background:var(--s3);border:1.5px solid var(--bd);border-radius:9px;color:var(--text);font-size:13px;outline:none;transition:all .2s;}
+.l-pass:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(0,191,165,.08)}
+.l-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--dim);cursor:pointer;font-size:14px}
+.l-btn{width:100%;padding:13px;background:linear-gradient(135deg,rgba(0,191,165,.2),rgba(0,191,165,.1));border:1px solid rgba(0,191,165,.4);border-radius:9px;color:var(--teal);font-size:13px;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .2s;}
+.l-btn:hover{box-shadow:0 0 30px rgba(0,191,165,.2)}
+.l-err{text-align:center;font-size:11px;color:var(--red);margin-top:10px;min-height:16px}
+.l-foot{text-align:center;margin-top:16px;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);letter-spacing:1px;text-transform:uppercase}
+#appPage{flex-direction:column;height:100vh;overflow:hidden}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0 22px;height:54px;background:var(--sf);border-bottom:1px solid var(--bd);flex-shrink:0;z-index:100;position:relative;}
+.topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--teal),transparent);opacity:.2;}
+.tb-brand{display:flex;align-items:center;gap:10px}
+.tb-logo{width:32px;height:32px;border-radius:8px;background:rgba(0,191,165,.1);border:1px solid rgba(0,191,165,.2);display:flex;align-items:center;justify-content:center;font-size:16px;}
+.tb-name{font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;letter-spacing:1.5px;color:var(--text);}
+.tb-name span{color:var(--teal)}
+.tb-name small{display:block;font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--dim);font-weight:400;margin-top:-2px;}
+.tb-nav{display:flex;height:100%;margin-left:24px}
+.tb-ni{display:flex;align-items:center;gap:6px;padding:0 14px;font-size:11px;font-weight:600;color:var(--sub);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;letter-spacing:.3px;text-transform:uppercase;}
+.tb-ni:hover{color:var(--text)}.tb-ni.active{color:var(--teal);border-bottom-color:var(--teal)}
+.tb-right{display:flex;align-items:center;gap:8px}
+.tb-pill{padding:4px 10px;border-radius:20px;font-size:9px;font-weight:600;border:1px solid;cursor:default;letter-spacing:.5px;font-family:'JetBrains Mono',monospace;}
+.tp-role{background:var(--gold2);border-color:rgba(255,184,0,.3);color:var(--gold)}
+.tp-month{background:var(--teal2);border-color:rgba(0,191,165,.3);color:var(--teal)}
+.tp-alert{background:var(--red2);border-color:rgba(255,68,68,.3);color:var(--red)}
+.tb-add-btn{padding:7px 16px;background:linear-gradient(135deg,rgba(0,191,165,.18),rgba(0,191,165,.08));border:1px solid rgba(0,191,165,.35);border-radius:8px;color:var(--teal);font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;}
+.tb-add-btn:hover{box-shadow:0 0 16px rgba(0,191,165,.15)}
+.tb-logout{padding:4px 10px;border:1px solid var(--bd);background:none;border-radius:6px;color:var(--dim);font-size:10px;cursor:pointer;transition:all .2s}
+.tb-logout:hover{border-color:var(--red);color:var(--red)}
+.app-body{flex:1;overflow:hidden;position:relative}
+.view{display:none;height:100%;overflow-y:auto}.view.active{display:block}
+.kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:18px}
+.kpi{background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:14px 16px;position:relative;overflow:hidden;transition:all .2s;}
+.kpi:hover{border-color:var(--bd2);transform:translateY(-2px)}.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kk0::before{background:var(--teal)}.kk1::before{background:var(--green)}.kk2::before{background:var(--red)}.kk3::before{background:var(--gold)}.kk4::before{background:var(--purple)}.kk5::before{background:var(--orange)}
+.kpi-lbl{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;margin-bottom:8px}
+.kpi-val{font-family:'Rajdhani',sans-serif;font-size:34px;font-weight:700;line-height:1;margin-bottom:3px}
+.kk0 .kpi-val{color:var(--teal)}.kk1 .kpi-val{color:var(--green)}.kk2 .kpi-val{color:var(--red)}.kk3 .kpi-val{color:var(--gold)}.kk4 .kpi-val{color:var(--purple)}.kk5 .kpi-val{color:var(--orange)}
+.kpi-sub{font-size:10px;color:var(--dim)}
+.sec-wrap{padding:18px 22px}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+.sec-title{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;letter-spacing:.5px}
+.sec-filters{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.flt-btn{padding:5px 12px;border-radius:6px;border:1px solid var(--bd);background:var(--s2);color:var(--sub);font-size:10px;font-weight:600;cursor:pointer;transition:all .18s;font-family:'JetBrains Mono',monospace;}
+.flt-btn:hover{border-color:var(--teal);color:var(--teal)}.flt-btn.active{background:var(--teal);border-color:var(--teal);color:var(--bg)}
+.month-sel{padding:6px 10px;background:var(--s3);border:1px solid var(--bd);border-radius:7px;color:var(--text);font-size:11px;outline:none;}
+.month-sel:focus{border-color:var(--teal)}
+.srch-box{display:flex;align-items:center;gap:6px;background:var(--s2);border:1px solid var(--bd);border-radius:7px;padding:6px 11px;transition:border-color .2s;}
+.srch-box:focus-within{border-color:var(--teal)}
+.srch-box input{background:none;border:none;outline:none;color:var(--text);font-size:11px;width:160px}
+.date-filter-wrap{display:flex;gap:6px;align-items:center;}
+.date-filter-label{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--dim);text-transform:uppercase;}
+.date-filter-input{padding:5px 8px;background:var(--s3);border:1px solid var(--bd);border-radius:7px;color:var(--text);font-size:10px;outline:none;font-family:'JetBrains Mono',monospace;}
+.date-filter-input:focus{border-color:var(--teal)}
+.task-table{width:100%;border-collapse:collapse;min-width:900px}
+.task-table thead th{background:var(--table-head);padding:9px 14px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim);border-bottom:1px solid var(--bd);white-space:nowrap;}
+.task-table tbody tr{border-bottom:1px solid rgba(31,45,66,.5);cursor:pointer;transition:background .12s;}
+.task-table tbody tr:hover{background:rgba(0,191,165,.03)}
+.task-table td{padding:10px 14px;vertical-align:middle}
+.proof-link-icon{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:var(--teal2);border:1px solid rgba(0,191,165,.3);border-radius:6px;color:var(--teal);font-size:12px;cursor:pointer;transition:all .2s;text-decoration:none;}
+.proof-link-icon:hover{background:var(--teal);color:var(--bg);}
+.proof-link-icon.disabled{background:var(--s3);border-color:var(--bd);color:var(--dim);cursor:not-allowed;opacity:0.5;}
+.tt-section{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:5px;font-size:9px;font-weight:700;letter-spacing:.5px;font-family:'JetBrains Mono',monospace;}
+.s-ea{background:rgba(0,191,165,.12);color:var(--teal);border:1px solid rgba(0,191,165,.25)}
+.s-pc{background:rgba(0,212,255,.12);color:var(--cyan);border:1px solid rgba(0,212,255,.25)}
+.s-admin{background:rgba(176,96,255,.12);color:var(--purple);border:1px solid rgba(176,96,255,.25)}
+.s-cus{background:rgba(255,140,66,.12);color:var(--orange);border:1px solid rgba(255,140,66,.25)}
+.status-pill{padding:3px 10px;border-radius:20px;font-size:9px;font-weight:700;letter-spacing:.5px;font-family:'JetBrains Mono',monospace;display:inline-flex;align-items:center;gap:4px;}
+.sp-done{background:var(--green2);color:var(--green);border:1px solid rgba(0,230,118,.25)}
+.sp-pending{background:var(--s3);color:var(--sub);border:1px solid var(--bd)}
+.sp-overdue{background:var(--red2);color:var(--red);border:1px solid rgba(255,68,68,.25);animation:pulse-red 2s ease infinite}
+.sp-today{background:var(--gold2);color:var(--gold);border:1px solid rgba(255,184,0,.25)}
+@keyframes pulse-red{0%,100%{box-shadow:none}50%{box-shadow:0 0 8px rgba(255,68,68,.3)}}
+.freq-badge{padding:2px 7px;border-radius:4px;font-size:8px;font-weight:700;letter-spacing:.5px;font-family:'JetBrains Mono',monospace;}
+.fb-d{background:rgba(0,230,118,.08);color:var(--green)}
+.fb-w{background:rgba(0,212,255,.08);color:var(--cyan)}
+.fb-m{background:rgba(0,191,165,.08);color:var(--teal)}.fb-q{background:rgba(176,96,255,.08);color:var(--purple)}.fb-a{background:rgba(255,140,66,.08);color:var(--orange)}
+.tw-wrap{background:var(--s2);border:1px solid var(--bd);border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.1)}
+.tw-scroll{overflow-x:auto}
+.add-row-btn{width:100%;padding:10px;background:none;border:none;border-top:1px solid var(--bd);color:var(--dim);font-size:11px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px;}
+.add-row-btn:hover{background:rgba(0,191,165,.04);color:var(--teal)}
+.mis-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.mis-card{background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:16px;position:relative;overflow:hidden;}
+.mis-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.mc-b::before{background:var(--teal)}.mc-g::before{background:var(--green)}.mc-r::before{background:var(--red)}.mc-o::before{background:var(--orange)}
+.mis-lbl{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;margin-bottom:8px}
+.mis-val{font-family:'Rajdhani',sans-serif;font-size:36px;font-weight:700;line-height:1;margin-bottom:3px}
+.mc-b .mis-val{color:var(--teal)}.mc-g .mis-val{color:var(--green)}.mc-r .mis-val{color:var(--red)}.mc-o .mis-val{color:var(--orange)}
+.mis-sub{font-size:10px;color:var(--dim)}
+.week-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:18px}
+.week-card{background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:12px;transition:all .2s;}
+.wk-label{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--teal);margin-bottom:8px;letter-spacing:1px}
+.wk-bar-wrap{display:flex;flex-direction:column;gap:4px}
+.wk-bar-row{display:flex;align-items:center;gap:6px}
+.wk-bar-lbl{font-size:9px;color:var(--dim);width:50px;flex-shrink:0}
+.wk-bar{flex:1;height:8px;background:var(--s3);border-radius:4px;overflow:hidden;border:1px solid var(--bd)}
+.wk-fill{height:100%;border-radius:4px}
+.wk-num{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;min-width:18px;text-align:right}
+.sec-chart{background:var(--s2);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:18px}
+.sc-hdr{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--sub);text-transform:uppercase;margin-bottom:14px}
+.sc-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.sc-lbl{width:120px;font-size:11px;color:var(--sub);flex-shrink:0}
+.sc-bar{flex:1;height:22px;background:var(--s3);border-radius:4px;overflow:hidden;border:1px solid var(--bd)}
+.sc-fill{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px;font-size:9px;font-weight:700;color:var(--bg);transition:width .8s ease}
+.sc-nums{display:flex;gap:8px;font-size:10px;min-width:100px;justify-content:flex-end}
+.sc-n{display:flex;align-items:center;gap:3px}
+.proof-link-box{background:var(--s3);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+.proof-link-lbl{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.proof-link-inp{width:100%;background:none;border:none;outline:none;color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;}
+.proof-link-view{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--teal2);border:1px solid rgba(0,191,165,.25);border-radius:6px;margin-top:6px}
+.proof-link-view a{color:var(--teal);text-decoration:none;font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.proof-link-view a:hover{text-decoration:underline}
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;align-items:center;justify-content:center;backdrop-filter:blur(6px)}.mo.open{display:flex}
+.md{background:var(--s2);border:1px solid var(--bd);border-radius:14px;width:600px;max-width:96vw;max-height:92vh;overflow-y:auto;animation:mIn .22s ease;box-shadow:0 40px 80px rgba(0,0,0,.4);}
+@keyframes mIn{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
+.mh{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 14px;border-bottom:1px solid var(--bd);position:sticky;top:0;background:var(--s2);z-index:5;border-radius:14px 14px 0 0;}
+.mh::after{content:'';position:absolute;bottom:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,var(--teal),transparent);opacity:.2;}
+.mt{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--text);}.mt span{color:var(--teal)}
+.mclose{width:28px;height:28px;border-radius:7px;border:1px solid var(--bd);background:none;color:var(--sub);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.mclose:hover{border-color:var(--red);color:var(--red)}
+.mb{padding:20px}.mf{display:flex;gap:8px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--bd);}
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.fl{font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1px;color:var(--sub);text-transform:uppercase;}
+.fi,.fs{padding:9px 12px;background:var(--s3);border:1.5px solid var(--bd);border-radius:8px;color:var(--text);font-size:12px;outline:none;width:100%;transition:all .2s;}
+.fi:focus,.fs:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(0,191,165,.07)}
+.fs option{background:var(--s3)}
+.fr2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.bp{padding:9px 18px;background:linear-gradient(135deg,rgba(0,191,165,.2),rgba(0,191,165,.1));border:1px solid rgba(0,191,165,.4);border-radius:8px;color:var(--teal);font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;}
+.bp:hover{box-shadow:0 0 16px rgba(0,191,165,.2)}
+.bs{padding:9px 14px;border:1.5px solid var(--bd);background:none;border-radius:8px;color:var(--sub);font-size:12px;cursor:pointer;}
+.bd2b{padding:9px 14px;border:1.5px solid rgba(255,68,68,.3);background:var(--red2);border-radius:8px;color:var(--red);font-size:12px;cursor:pointer;}
+.task-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.tdg-item{background:var(--s3);border:1px solid var(--bd);border-radius:8px;padding:10px 12px}
+.tdg-lbl{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.tdg-val{font-size:12px;font-weight:600;color:var(--text)}
+.notes-box{background:var(--s3);border:1px solid var(--bd);border-radius:8px;padding:12px;margin-bottom:12px}
+.notes-lbl{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.notes-inp{width:100%;background:none;border:none;outline:none;color:var(--text);font-size:12px;resize:none;min-height:60px;font-family:'DM Sans',sans-serif;}
+.sync-dot{position:fixed;bottom:14px;right:14px;z-index:400;padding:5px 11px;border-radius:20px;font-size:9px;font-weight:600;display:flex;align-items:center;gap:5px;transition:all .25s;font-family:'JetBrains Mono',monospace;}
+.sync-dot.saved{background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.25);color:var(--green)}.sync-dot.saving{background:var(--gold2);border:1px solid rgba(255,184,0,.3);color:var(--gold)}.sync-dot.err{background:var(--red2);border:1px solid rgba(255,68,68,.3);color:var(--red)}
+.sd{width:5px;height:5px;border-radius:50%;background:currentColor;animation:blink .8s ease infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--s2);border:1px solid var(--bd);border-radius:9px;padding:10px 18px;font-size:11px;z-index:999;opacity:0;transition:all .28s;white-space:nowrap;color:var(--text);box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1}.toast.s{border-left:3px solid var(--green)}.toast.e{border-left:3px solid var(--red)}.toast.i{border-left:3px solid var(--teal)}
+@media(max-width:1100px){.kpi-row{grid-template-columns:repeat(3,1fr)}.mis-grid{grid-template-columns:repeat(2,1fr)}.week-grid{grid-template-columns:repeat(3,1fr)}}
+.rl-hdr{display:grid;grid-template-columns:40px 1fr 1fr 92px;gap:4px;margin:10px 0 6px;padding:0 2px;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);text-transform:uppercase;}
+.rl-row{display:grid;grid-template-columns:40px 1fr 1fr 92px;gap:4px;margin-bottom:6px;align-items:center;}
+.rl-cats{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:5px;padding:4px 2px 8px 44px;}
+.rl-cat{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--sub);cursor:pointer;background:var(--s3);border:1px solid var(--bd);border-radius:6px;padding:3px 7px;}
+.rl-cat input{margin:0;cursor:pointer}
+.wo-days{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+.wo-day{text-align:center;padding:9px 2px;border-radius:8px;border:1.5px solid var(--bd);background:var(--s3);cursor:pointer;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--dim);transition:all .15s;user-select:none;}
+.wo-day.on{border-color:var(--red);background:rgba(255,68,68,.12);color:var(--red);}
+.sp-note{font-size:10px;color:var(--dim);line-height:1.6;margin:10px 0 4px;padding:8px 10px;background:var(--s3);border-radius:7px;border:1px solid var(--bd);}
+.cat-row{display:grid;grid-template-columns:1fr 44px auto;gap:5px;margin-bottom:6px;align-items:center;}
+.cat-row input[type=color]{height:32px;padding:2px;border-radius:7px;border:1px solid var(--bd);background:var(--s3);cursor:pointer;width:100%;}
+.cat-del{background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.25);color:var(--red);border-radius:7px;width:30px;height:30px;cursor:pointer;font-size:11px;}
+.wd-row{display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:7px;background:var(--s3);border:1px solid var(--bd);margin-bottom:5px;font-size:11px;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginPage" class="page active">
+  <div class="lcard">
+    <div class="l-brand">
+      <div class="l-brand-logo" id="brandLogo">📁</div>
+      <div class="l-brand-name" id="brandName">TASK <span>FMS</span></div>
+      <div class="l-brand-sub" id="brandSub">Task Management System</div>
+    </div>
+    <div class="l-theme-row">
+      <span>🌙</span>
+      <button class="theme-toggle" id="loginThemeBtn"><div class="theme-icons"><span>🌙</span><span>☀️</span></div></button>
+      <span>☀️</span>
+      <span style="margin-left:4px;font-family:'JetBrains Mono',monospace;font-size:9px" id="loginThemeLabel">Dark Mode</span>
+    </div>
+    <div class="l-roles-label">Select Role</div>
+    <div class="l-roles" id="loginRoles">
+      <!-- roles rendered by renderLoginRoles() -->
+    </div>
+    <div class="l-sep"><div class="l-sep-line"></div><div class="l-sep-txt">Password</div><div class="l-sep-line"></div></div>
+    <div class="l-pass-wrap">
+      <input class="l-pass" type="password" id="passInput" placeholder="Enter password...">
+      <button class="l-eye" id="passToggle">👁</button>
+    </div>
+    <button class="l-btn" id="enterBtn">ENTER SYSTEM →</button>
+    <div class="l-err" id="lErr"></div>
+    <div class="l-foot" id="brandFoot">Task FMS · Confidential</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appPage" class="page" style="flex-direction:column">
+  <div class="topbar">
+    <div class="tb-brand">
+      <div class="tb-logo" id="appBrandLogo">📁</div>
+      <div class="tb-name" id="appBrandTxt">TASK <span>FMS</span><small id="appBrandSub">TASK MANAGEMENT SYSTEM</small></div>
+    </div>
+    <div class="tb-nav">
+      <div class="tb-ni active" id="nav-dash">📊 Dashboard</div>
+      <div class="tb-ni" id="nav-tasks">✅ Tasks</div>
+      <div class="tb-ni" id="nav-mis">📈 MIS Report</div>
+    </div>
+    <div class="tb-right">
+      <div class="tb-pill tp-alert" id="overduePill">⚠ 0 Overdue</div>
+      <div class="tb-pill tp-month" id="monthPill">📅 Apr 2026</div>
+      <div class="tb-pill tp-role" id="rolePill">👑 Owner</div>
+      <button class="settings-btn" id="settingsBtn" title="Settings">⚙️</button>
+      <button class="theme-toggle" id="appThemeBtn"><div class="theme-icons"><span>🌙</span><span>☀️</span></div></button>
+      <button class="tb-add-btn" id="addTaskBtn">+ Add Task</button>
+      <button class="tb-logout" id="logoutBtn">Logout</button>
+    </div>
+  </div>
+  <div class="app-body">
+    <!-- DASHBOARD -->
+    <div class="view active" id="view-dash">
+      <div class="sec-wrap">
+        <div class="kpi-row">
+          <div class="kpi kk0"><div class="kpi-lbl">Total Tasks</div><div class="kpi-val" id="dk0">0</div><div class="kpi-sub">This month</div></div>
+          <div class="kpi kk1"><div class="kpi-lbl">Completed</div><div class="kpi-val" id="dk1">0</div><div class="kpi-sub">Done ✓</div></div>
+          <div class="kpi kk2"><div class="kpi-lbl">Overdue</div><div class="kpi-val" id="dk2">0</div><div class="kpi-sub" id="dk2s">Need action</div></div>
+          <div class="kpi kk3"><div class="kpi-lbl">Pending</div><div class="kpi-val" id="dk3">0</div><div class="kpi-sub">Upcoming</div></div>
+          <div class="kpi kk4"><div class="kpi-lbl">Due Today</div><div class="kpi-val" id="dk4">0</div><div class="kpi-sub">Act now!</div></div>
+          <div class="kpi kk5"><div class="kpi-lbl">Completion %</div><div class="kpi-val" id="dk5">0%</div><div class="kpi-sub">This month</div></div>
+        </div>
+        <div class="sec-chart">
+          <div class="sc-hdr">Category-wise Progress — <span id="dashMonthLabel" style="color:var(--teal)"></span></div>
+          <div id="sectionChart"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
+          <div style="background:var(--s2);border:1px solid var(--bd);border-radius:12px;overflow:hidden">
+            <div style="padding:10px 14px;background:var(--s3);border-bottom:1px solid var(--bd);font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--red);text-transform:uppercase">⚠ Overdue Tasks</div>
+            <div style="padding:12px" id="overdueList"></div>
+          </div>
+          <div style="background:var(--s2);border:1px solid var(--bd);border-radius:12px;overflow:hidden">
+            <div style="padding:10px 14px;background:var(--s3);border-bottom:1px solid var(--bd);font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--gold);text-transform:uppercase">📅 Due This Week</div>
+            <div style="padding:12px" id="dueSoonList"></div>
+          </div>
+        </div>
+        <div class="tw-wrap">
+          <div style="padding:10px 14px;background:var(--s3);border-bottom:1px solid var(--bd);font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--sub);text-transform:uppercase">📋 All Tasks This Month</div>
+          <div class="tw-scroll">
+            <table class="task-table">
+              <thead><tr><th>Category</th><th>Task</th><th>Due Date</th><th>Frequency</th><th>Assigned</th><th>Status</th><th>Proof</th></tr></thead>
+              <tbody id="dashTaskBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TASKS -->
+    <div class="view" id="view-tasks">
+      <div class="sec-wrap">
+        <div class="sec-hdr">
+          <div class="sec-title" style="color:var(--teal)">📋 Task Management</div>
+          <div class="sec-filters">
+            <div class="srch-box"><span style="color:var(--dim)">🔍</span><input id="taskSrch" placeholder="Search task..."></div>
+            <select class="month-sel" id="taskMonthSel"></select>
+            <div class="date-filter-wrap">
+              <span class="date-filter-label">From:</span>
+              <input type="date" class="date-filter-input" id="taskFromDate">
+              <span class="date-filter-label">To:</span>
+              <input type="date" class="date-filter-input" id="taskToDate">
+              <button class="flt-btn" id="clearDateFilter">Clear</button>
+            </div>
+            <button class="flt-btn active" data-f="All">All</button>
+            <span id="catFltWrap"></span>
+            <button class="flt-btn" data-f="Overdue">⚠ Overdue</button>
+            <button class="flt-btn" data-f="Pending">Pending</button>
+            <button class="flt-btn" data-f="Done">Done</button>
+          </div>
+        </div>
+        <div class="tw-wrap">
+          <div class="tw-scroll">
+            <table class="task-table">
+              <thead><tr><th>#</th><th>Category</th><th>Task</th><th>Frequency</th><th>Due Date</th><th>Assigned To</th><th>Status</th><th>Completed On</th><th>Notes</th><th>Proof</th></tr></thead>
+              <tbody id="taskBody"></tbody>
+            </table>
+          </div>
+          <button class="add-row-btn" id="addRowBtn">＋ Add Custom Task</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MIS -->
+    <div class="view" id="view-mis">
+      <div class="sec-wrap">
+        <div class="sec-hdr">
+          <div class="sec-title" style="color:var(--teal)">📈 MIS Report</div>
+          <div class="sec-filters">
+            <select class="month-sel" id="misMonthSel"></select>
+            <div class="date-filter-wrap">
+              <span class="date-filter-label">From:</span>
+              <input type="date" class="date-filter-input" id="misFromDate">
+              <span class="date-filter-label">To:</span>
+              <input type="date" class="date-filter-input" id="misToDate">
+              <button class="flt-btn" id="clearMisDateFilter">Clear</button>
+            </div>
+          </div>
+        </div>
+        <div class="mis-grid" id="misCards"></div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--sub);text-transform:uppercase;margin-bottom:10px">📅 Weekly Breakdown</div>
+        <div class="week-grid" id="weekGrid"></div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1.5px;color:var(--sub);text-transform:uppercase;margin-bottom:10px">📊 Category-wise Analysis</div>
+        <div class="sec-chart" id="misSectionChart"></div>
+        <div class="tw-wrap">
+          <div style="padding:10px 14px;background:var(--s3);border-bottom:1px solid var(--bd);font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.5px;color:var(--sub);text-transform:uppercase">Detailed Task Report</div>
+          <div class="tw-scroll">
+            <table class="task-table">
+              <thead><tr><th>Category</th><th>Task</th><th>Due Date</th><th>Completed On</th><th>Delay (days)</th><th>Status</th><th>Assigned</th></tr></thead>
+              <tbody id="misBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS PANEL -->
+<div class="settings-overlay" id="settingsOverlay">
+  <div class="settings-panel">
+    <div class="sp-header"><div class="sp-title">⚙️ SETTINGS</div><button class="mclose" onclick="closeSettings()">✕</button></div>
+    <div class="sp-tabs">
+      <div class="sp-tab active" onclick="switchSpTab('brand',this)">🏷 Brand</div>
+      <div class="sp-tab" onclick="switchSpTab('roles',this)">🔐 Roles</div>
+      <div class="sp-tab" onclick="switchSpTab('cats',this)">📂 Categories</div>
+      <div class="sp-tab" onclick="switchSpTab('weekoff',this)">🗓 Week Off</div>
+      <div class="sp-tab" onclick="switchSpTab('team',this)">👥 Team</div>
+      <div class="sp-tab" onclick="switchSpTab('email',this)">📧 Email</div>
+      <div class="sp-tab" onclick="switchSpTab('holidays',this)">📅 Holidays</div>
+      <div class="sp-tab" onclick="switchSpTab('data',this)">🗄 Data</div>
+    </div>
+    <div class="sp-tab-content" id="sptab-team">
+      <div class="sp-info-box">Add team members with their Name, Role, and Email.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1.5fr auto;gap:4px;margin:10px 0 6px;padding:0 2px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);text-transform:uppercase">Name</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);text-transform:uppercase">Role</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);text-transform:uppercase">Email</div>
+        <div></div>
+      </div>
+      <div id="teamMembersWrap"></div>
+      <button onclick="addTeamMember()" style="width:100%;padding:8px;background:var(--s3);border:1px dashed var(--bd);border-radius:8px;color:var(--teal);font-size:11px;cursor:pointer;margin-top:4px">+ Add Member</button>
+      <div class="sp-label" style="margin-top:14px">Owner Email (CC on overdue alerts)</div>
+      <input class="sp-input" id="sp-owner-email" placeholder="owner@company.com" type="email">
+      <button class="sp-btn" id="saveTeamBtn">💾 Save Team</button>
+    </div>
+    <div class="sp-tab-content" id="sptab-email">
+      <div class="sp-info-box"><strong>Setup:</strong><br>1. resend.com → Sign up<br>2. Add domain → API Key → paste below<br>3. Save ✓</div>
+      <div class="sp-label">Resend API Key</div><input class="sp-input" id="sp-resend-key" placeholder="re_xxxxxxxxxxxxxxxxxxxxxxxx" type="password">
+      <div class="sp-label">Sender Email</div><input class="sp-input" id="sp-sender-email" placeholder="noreply@yourdomain.com" type="email">
+      <div class="sp-label">Daily Reminder Time</div><input class="sp-input" id="sp-reminder-time" type="time" value="09:00">
+      <div style="margin-top:12px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--sub)"><input type="checkbox" id="sp-email-daily" style="width:14px;height:14px;accent-color:var(--teal)"> Daily reminder email</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--sub);margin-top:8px"><input type="checkbox" id="sp-email-new" style="width:14px;height:14px;accent-color:var(--teal)" checked> Email on new task</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--sub);margin-top:8px"><input type="checkbox" id="sp-email-overdue" style="width:14px;height:14px;accent-color:var(--teal)" checked> Email on overdue</label>
+      </div>
+      <button class="sp-btn" id="saveEmailBtn">💾 Save Email Settings</button>
+      <button class="sp-btn" id="testEmailBtn" style="background:rgba(0,230,118,.15);border-color:rgba(0,230,118,.4);color:var(--green);margin-top:6px">📧 Send Test Email</button>
+    </div>
+    <div class="sp-tab-content" id="sptab-holidays">
+      <div class="sp-info-box">Tasks weekly-off days &amp; holidays ko skip karte hain → pichhle working day pe shift ho jaate hain.</div>
+      <div class="sp-label">Upload Excel/CSV</div>
+      <div style="border:1px dashed var(--bd);border-radius:8px;padding:14px;text-align:center;cursor:pointer;margin-bottom:10px" id="xlDropZone" onclick="document.getElementById('xlFile').click()">
+        <div style="font-size:20px;margin-bottom:6px">📂</div>
+        <div style="font-size:11px;color:var(--sub)">Click to upload Excel / CSV</div>
+        <div style="font-size:10px;color:var(--dim);margin-top:3px">Columns: Date (DD/MM/YYYY), Holiday Name</div>
+        <input type="file" id="xlFile" accept=".xlsx,.xls,.csv" style="display:none">
+      </div>
+      <div class="sp-label">Add Manually</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin-bottom:8px">
+        <input class="sp-input" type="date" id="hl-date-inp">
+        <input class="sp-input" type="text" id="hl-name-inp" placeholder="Holiday name">
+        <button onclick="addHolidayManual()" style="padding:8px 12px;background:var(--teal2);border:1px solid rgba(0,191,165,.3);border-radius:8px;color:var(--teal);font-size:11px;cursor:pointer">Add</button>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);text-transform:uppercase;margin-bottom:8px">Holidays <span id="hlCount" style="color:var(--teal)">(0)</span></div>
+      <div id="holidayListWrap" style="max-height:200px;overflow-y:auto"></div>
+      <button class="sp-btn" id="saveHolidaysBtn">💾 Save Holidays</button>
+      <button class="sp-btn-secondary" id="clearHolidaysBtn">🗑 Clear All</button>
+    </div>
+    <div class="sp-tab-content active" id="sptab-brand">
+      <div class="sp-info-box">Yeh naam poore system me dikhega — login screen, header, emails aur browser tab.</div>
+      <div class="sp-label">App Name — Part 1 (plain)</div><input class="sp-input" id="sp-brand-n1" placeholder="TASK">
+      <div class="sp-label">App Name — Part 2 (highlighted)</div><input class="sp-input" id="sp-brand-n2" placeholder="FMS">
+      <div class="sp-label">Sub-title / Department</div><input class="sp-input" id="sp-brand-sub" placeholder="Task Management System">
+      <div class="sp-label">Logo Emoji</div><input class="sp-input" id="sp-brand-logo" placeholder="📁" maxlength="4">
+      <div class="sp-label">Footer Line</div><input class="sp-input" id="sp-brand-foot" placeholder="Task FMS · Confidential">
+      <button class="sp-btn" id="saveBrandBtn">💾 Save Branding</button>
+    </div>
+
+    <div class="sp-tab-content" id="sptab-roles">
+      <div class="sp-info-box">5 roles. Naam, icon, password aur access aap kabhi bhi badal sakte hain — purana data safe rahega.</div>
+      <div class="rl-hdr"><div>Icon</div><div>Role Name</div><div>Password</div><div>Access</div></div>
+      <div id="roleInputsWrap"></div>
+      <div class="sp-note">Access: <b>Full</b> = sab kuch + Settings · <b>Team</b> = sirf apni categories · <b>View</b> = read-only</div>
+      <button class="sp-btn" id="saveRolesBtn">💾 Save Roles</button>
+    </div>
+
+    <div class="sp-tab-content" id="sptab-cats">
+      <div class="sp-info-box">Task categories. Rename karne par purane tasks bhi automatically update ho jaayenge.</div>
+      <div id="catInputsWrap"></div>
+      <button class="sp-btn-secondary" onclick="addCategory()">+ Add Category</button>
+      <button class="sp-btn" id="saveCatsBtn">💾 Save Categories</button>
+    </div>
+
+    <div class="sp-tab-content" id="sptab-weekoff">
+      <div class="sp-info-box">Weekly off days select karein. Due date agar off day pe padegi to automatically pichhle working day pe shift ho jayegi.</div>
+      <div class="sp-label">Weekly Off Days</div>
+      <div class="wo-days" id="weekOffDays"></div>
+      <div class="sp-label" style="margin-top:14px">Special Working Days (off rule ko override karein)</div>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:6px;margin-bottom:8px">
+        <input class="sp-input" type="date" id="wd-date-inp">
+        <button onclick="addWorkDate()" style="padding:8px 12px;background:var(--teal2);border:1px solid rgba(0,191,165,.3);border-radius:8px;color:var(--teal);font-size:11px;cursor:pointer">Add</button>
+      </div>
+      <div id="workDateWrap" style="max-height:150px;overflow-y:auto"></div>
+      <div class="sp-note">Note: Week-off change karne se pehle se bane tasks ki due date nahi badlegi — sirf naye tasks pe apply hoga.</div>
+      <button class="sp-btn" id="saveWeekOffBtn">💾 Save Week Off</button>
+    </div>
+
+    <div class="sp-tab-content" id="sptab-data">
+      <div class="sp-info-box">Supabase connection. Har FMS ka apna table hona chahiye, warna data mix ho jayega.</div>
+      <div class="sp-label">Supabase URL</div><input class="sp-input" id="sp-db-url" placeholder="https://xxxx.supabase.co">
+      <div class="sp-label">Supabase anon key</div><input class="sp-input" id="sp-db-key" type="password" placeholder="eyJ...">
+      <div class="sp-label">Table Name</div><input class="sp-input" id="sp-db-table" placeholder="task_fms_tasks">
+      <button class="sp-btn" id="saveDbBtn">💾 Save &amp; Reconnect</button>
+      <button class="sp-btn-secondary" id="testDbBtn">🔌 Test Connection</button>
+      <div class="sp-label" style="margin-top:14px">Table banane ka SQL</div>
+      <textarea class="sp-input" id="sqlBox" readonly style="height:150px;font-family:'JetBrains Mono',monospace;font-size:9px;resize:vertical"></textarea>
+      <button class="sp-btn-secondary" onclick="copySql()">📋 Copy SQL</button>
+      <div class="sp-note" style="margin-top:14px">Danger zone</div>
+      <button class="sp-btn-secondary" id="resetSettingsBtn" style="color:var(--red);border-color:rgba(255,68,68,.3)">↺ Reset all settings to default</button>
+    </div>
+  </div>
+</div>
+
+<!-- TASK DETAIL MODAL -->
+<div class="mo" id="taskMo">
+  <div class="md">
+    <div class="mh"><div class="mt" id="taskMoTitle">Task <span>Detail</span></div><button class="mclose" onclick="closeMo('taskMo')">✕</button></div>
+    <div class="mb">
+      <div class="task-detail-grid" id="taskDetailGrid"></div>
+      <div class="notes-box"><div class="notes-lbl">Notes / Remarks</div><textarea class="notes-inp" id="taskNotes" placeholder="Add notes here..."></textarea></div>
+      <div class="proof-link-box" id="proofLinkBox">
+        <div class="proof-link-lbl">🔗 Proof Link (Optional)</div>
+        <input class="proof-link-inp" id="taskProofLink" placeholder="https://drive.google.com/..." type="url">
+        <div id="proofLinkView" style="display:none"></div>
+      </div>
+      <div class="fg"><label class="fl">Completed On (Actual Date)</label><input class="fi" type="date" id="taskActualDate"></div>
+      <div class="fg"><label class="fl">Assigned To</label><select class="fs" id="taskAssign"></select></div>
+    </div>
+    <div class="mf">
+      <button class="bd2b" id="deleteTaskBtn">🗑 Delete</button>
+      <button class="bs" onclick="closeMo('taskMo')">Cancel</button>
+      <button class="bp" id="markPendingBtn" style="background:rgba(90,90,120,.3);border-color:var(--bd);color:var(--sub)">Mark Pending</button>
+      <button class="bp" id="markDoneBtn">✓ Mark Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD TASK MODAL -->
+<div class="mo" id="addTaskMo">
+  <div class="md">
+    <div class="mh"><div class="mt">Add <span>Custom Task</span></div><button class="mclose" onclick="closeMo('addTaskMo')">✕</button></div>
+    <div class="mb">
+      <div class="fr2">
+        <div class="fg"><label class="fl">Category *</label>
+          <select class="fs" id="at-section"></select>
+        </div>
+        <div class="fg"><label class="fl">Frequency</label>
+          <select class="fs" id="at-freq">
+            <option value="One-time">One-time</option>
+            <option value="Daily">Daily</option>
+            <option value="Weekly">Weekly</option>
+            <option value="Monthly" selected>Monthly</option>
+            <option value="Quarterly">Quarterly</option>
+            <option value="Annual">Annual</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">Task Name *</label><input class="fi" id="at-name" placeholder="Task description..."></div>
+      <div class="fr2">
+        <div class="fg"><label class="fl">Due Date *</label><input class="fi" type="date" id="at-due"></div>
+        <div class="fg"><label class="fl">Assigned To</label><select class="fs" id="at-assign"></select></div>
+      </div>
+      <div class="fg"><label class="fl">Notes</label><input class="fi" id="at-notes" placeholder="Optional notes..."></div>
+      <div id="recurringNote" style="display:none;background:var(--teal2);border:1px solid rgba(0,191,165,.2);border-radius:8px;padding:10px;font-size:11px;color:var(--teal);margin-top:4px"><span id="recurringText"></span></div>
+    </div>
+    <div class="mf"><button class="bs" onclick="closeMo('addTaskMo')">Cancel</button><button class="bp" id="saveAddTaskBtn">💾 Save Task</button></div>
+  </div>
+</div>
+
+<div class="sync-dot saved" id="syncDot"><div class="sd"></div><span id="syncTxt">Synced</span></div>
+<div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+// ══════════════════════════════════════════════════════════
+// SUPABASE
+// ══════════════════════════════════════════════════════════
+var SB_URL='https://duckuubnszaytuuerffx.supabase.co';
+var SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR1Y2t1dWJuc3pheXR1dWVyZmZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4MjQ4NDMsImV4cCI6MjA4OTQwMDg0M30.Aoesp7WobjoyvQWFIIZkDpE0JIcvnX9lLlLihK0byLE';
+var SB_H={'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'return=representation'};
+var TABLE='task_fms_tasks';
+function applyDb(){var d=(SETTINGS&&SETTINGS.db)||{};SB_URL=d.url||DEFAULT_SETTINGS.db.url;SB_KEY=d.key||DEFAULT_SETTINGS.db.key;TABLE=d.table||DEFAULT_SETTINGS.db.table;SB_H={'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Prefer':'return=representation'};}
+
+function sbFetch(path,method,body){var opts={method:method||'GET',headers:Object.assign({},SB_H)};if(body)opts.body=JSON.stringify(body);return fetch(SB_URL+'/rest/v1'+path,opts).then(function(r){if(!r.ok)return r.text().then(function(t){throw new Error(t);});if(r.status===204)return null;return r.json();});}
+
+// ══════════════════════════════════════════════════════════
+// ✅ FIX: filterTasksByRole — was MISSING, caused all JS errors
+// ══════════════════════════════════════════════════════════
+function filterTasksByRole(taskList) {
+  if(!currentRole) return taskList;
+  var r=curRole();
+  if(!r||r.access==='full'||r.access==='view') return taskList;
+  var cats=r.cats||[];
+  if(!cats.length) return taskList;
+  return taskList.filter(function(t){return cats.indexOf(t.section)>-1;});
+}
+
+// ══════════════════════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════════════════════
+var DEFAULT_CATS=[{name:'Category 1',color:'#00BFA5'},{name:'Category 2',color:'#00D4FF'},{name:'Category 3',color:'#B060FF'},{name:'Admin',color:'#FFB800'},{name:'Custom',color:'#FF8C42'}];
+var DEFAULT_ROLES=[
+ {key:'r1',name:'Role 1',icon:'\u{1F451}',access:'full',cats:[]},
+ {key:'r2',name:'Role 2',icon:'\u{1F4CB}',access:'edit',cats:['Category 1','Admin','Custom']},
+ {key:'r3',name:'Role 3',icon:'\u{1F504}',access:'edit',cats:['Category 2','Admin','Custom']},
+ {key:'r4',name:'Role 4',icon:'\u{1F9E9}',access:'edit',cats:['Category 3','Admin','Custom']},
+ {key:'r5',name:'Role 5',icon:'\u{1F441}',access:'view',cats:[]}
+];
+var DEFAULT_SETTINGS={theme:'dark',
+ brand:{n1:'TASK',n2:'FMS',sub:'Task Management System',logo:'\u{1F4C1}',foot:'Task FMS \u00b7 Confidential'},
+ roles:JSON.parse(JSON.stringify(DEFAULT_ROLES)),
+ categories:JSON.parse(JSON.stringify(DEFAULT_CATS)),
+ weekOffDays:[0],
+ workDates:[],
+ db:{url:'https://duckuubnszaytuuerffx.supabase.co',key:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR1Y2t1dWJuc3pheXR1dWVyZmZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4MjQ4NDMsImV4cCI6MjA4OTQwMDg0M30.Aoesp7WobjoyvQWFIIZkDpE0JIcvnX9lLlLihK0byLE',table:'task_fms_tasks'},
+ teamMembers:[{name:'Member 1',position:'Role 1',email:'member1@company.com'}],
+ ownerEmail:'owner@company.com',resendKey:'',senderEmail:'noreply@company.com',reminderTime:'09:00',
+ emailDaily:false,emailNew:true,emailOverdue:true,holidays:[],
+ passwords:{r1:'admin@123',r2:'role2@123',r3:'role3@123',r4:'role4@123',r5:'view@123'},
+ lastReminderDate:''};
+function normalizeSettings(s){
+  s=s||{};
+  s.brand=Object.assign({},DEFAULT_SETTINGS.brand,s.brand||{});
+  s.db=Object.assign({},DEFAULT_SETTINGS.db,s.db||{});
+  if(!Array.isArray(s.categories)||!s.categories.length)s.categories=JSON.parse(JSON.stringify(DEFAULT_CATS));
+  if(!Array.isArray(s.roles)||s.roles.length!==5)s.roles=JSON.parse(JSON.stringify(DEFAULT_ROLES));
+  s.roles=s.roles.map(function(r,i){var d=DEFAULT_ROLES[i];return{key:d.key,name:r.name||d.name,icon:r.icon||d.icon,access:['full','edit','view'].indexOf(r.access)>-1?r.access:d.access,cats:Array.isArray(r.cats)?r.cats:d.cats.slice()};});
+  if(!s.roles.some(function(r){return r.access==='full';}))s.roles[0].access='full';
+  if(!Array.isArray(s.weekOffDays))s.weekOffDays=[0];
+  s.weekOffDays=s.weekOffDays.filter(function(d){return d>=0&&d<=6;});
+  if(s.weekOffDays.length>=7)s.weekOffDays=[0];
+  if(!Array.isArray(s.workDates))s.workDates=[];
+  if(!Array.isArray(s.holidays))s.holidays=[];
+  if(!Array.isArray(s.teamMembers))s.teamMembers=JSON.parse(JSON.stringify(DEFAULT_SETTINGS.teamMembers));
+  s.passwords=Object.assign({},DEFAULT_SETTINGS.passwords,s.passwords||{});
+  return s;
+}
+function loadSettings(){try{var s=localStorage.getItem('taskfms_settings_v1');if(s)return normalizeSettings(Object.assign({},JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),JSON.parse(s)));}catch(e){}return normalizeSettings(JSON.parse(JSON.stringify(DEFAULT_SETTINGS)));}
+function saveSettings(s){try{localStorage.setItem('taskfms_settings_v1',JSON.stringify(s));}catch(e){}}
+
+/* ===== ROLE / CATEGORY / BRAND HELPERS ===== */
+function curRole(){return (SETTINGS.roles||[]).filter(function(r){return r.key===currentRole;})[0]||null;}
+function isAdmin(){var r=curRole();return !!r&&r.access==='full';}
+function isRO(){var r=curRole();return !r||r.access==='view';}
+function roleLabel(k){var r=(SETTINGS.roles||[]).filter(function(x){return x.key===k;})[0];return r?(r.icon+' '+r.name):(k||'');}
+function catList(){return SETTINGS.categories||DEFAULT_CATS;}
+function catNames(){return catList().map(function(c){return c.name;});}
+function catColor(n){var c=catList().filter(function(x){return x.name===n;})[0];return c?c.color:'#8892a6';}
+function catColorMap(){var m={};catList().forEach(function(c){m[c.name]=c.color;});return m;}
+function hexA(h,a){h=(h||'#8892a6').replace('#','');if(h.length===3)h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];var n=parseInt(h,16);return'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')';}
+function secTag(n){var c=catColor(n);return'<span class="tt-section" style="background:'+hexA(c,.12)+';color:'+c+';border:1px solid '+hexA(c,.28)+'">'+escH(n||'\u2014')+'</span>';}
+function brandFull(){var b=SETTINGS.brand||DEFAULT_SETTINGS.brand;return((b.n1||'')+' '+(b.n2||'')).trim();}
+function applyBrand(){var b=SETTINGS.brand||DEFAULT_SETTINGS.brand;
+  var set=function(id,html){var el=document.getElementById(id);if(el)el.innerHTML=html;};
+  set('brandName',escH(b.n1||'')+' <span>'+escH(b.n2||'')+'</span>');
+  set('brandSub',escH(b.sub||''));set('brandLogo',escH(b.logo||'\u{1F4C1}'));set('brandFoot',escH(b.foot||''));
+  document.title=brandFull()||'Task FMS';
+  var bt=document.getElementById('appBrandTxt');if(bt)bt.innerHTML=escH(b.n1||'')+' <span>'+escH(b.n2||'')+'</span><small>'+escH((b.sub||'').toUpperCase())+'</small>';
+  var bl=document.getElementById('appBrandLogo');if(bl)bl.textContent=b.logo||'\u{1F4C1}';
+}
+var SETTINGS=loadSettings();
+
+function applyTheme(t){document.documentElement.setAttribute('data-theme',t);SETTINGS.theme=t;var el=document.getElementById('loginThemeLabel');if(el)el.textContent=t==='dark'?'Dark Mode':'Light Mode';}
+function toggleTheme(){applyTheme(document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark');saveSettings(SETTINGS);}
+function isHoliday(dateStr){var holidays=SETTINGS.holidays||[];return holidays.some(function(h){return h.date===dateStr;});}
+function isWeeklyOff(dateStr){if(!dateStr)return false;var days=SETTINGS.weekOffDays||[0];return days.indexOf(new Date(dateStr).getDay())>-1;}
+function isSunday(dateStr){return isWeeklyOff(dateStr);}
+function isWorkDate(dateStr){return (SETTINGS.workDates||[]).indexOf(dateStr)>-1;}
+function isWorkingDay(dateStr){if(isWorkDate(dateStr))return true;return!isWeeklyOff(dateStr)&&!isHoliday(dateStr);}
+function dayName(i){return['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][i];}
+function toWorkingDay(dateStr){var d=new Date(dateStr);var safety=0;while(!isWorkingDay(d.toISOString().split('T')[0])&&safety<30){d.setDate(d.getDate()-1);safety++;}return d.toISOString().split('T')[0];}
+function switchSpTab(name,el){document.querySelectorAll('.sp-tab').forEach(function(t){t.classList.remove('active');});document.querySelectorAll('.sp-tab-content').forEach(function(t){t.classList.remove('active');});el.classList.add('active');document.getElementById('sptab-'+name).classList.add('active');}
+function openSettings(){if(!isAdmin()){showToast('Settings: full-access role only','e');return;}populateSettingsInputs();document.getElementById('settingsOverlay').classList.add('open');}
+function closeSettings(){document.getElementById('settingsOverlay').classList.remove('open');}
+function populateSettingsInputs(){setVal('sp-owner-email',SETTINGS.ownerEmail);setVal('sp-resend-key',SETTINGS.resendKey);setVal('sp-sender-email',SETTINGS.senderEmail);setVal('sp-reminder-time',SETTINGS.reminderTime||'09:00');setChk('sp-email-daily',SETTINGS.emailDaily);setChk('sp-email-new',SETTINGS.emailNew);setChk('sp-email-overdue',SETTINGS.emailOverdue);applyTheme(SETTINGS.theme);renderBrandInputs();renderRoleInputs();renderCatInputs();renderWeekOffInputs();renderDbInputs();renderTeamInputs();renderHolidayList();}
+function setVal(id,v){var el=document.getElementById(id);if(el)el.value=v||'';}
+function setChk(id,v){var el=document.getElementById(id);if(el)el.checked=!!v;}
+function renderTeamInputs(){var wrap=document.getElementById('teamMembersWrap');if(!wrap)return;var members=SETTINGS.teamMembers||[];wrap.innerHTML=members.map(function(m,i){return'<div class="tm-row" data-idx="'+i+'"><input class="sp-input" style="font-size:11px;padding:6px 8px" placeholder="Name" value="'+escH(m.name||'')+'" data-field="name"><input class="sp-input" style="font-size:11px;padding:6px 8px" placeholder="Role" value="'+escH(m.position||'')+'" data-field="position"><input class="sp-input" style="font-size:11px;padding:6px 8px" placeholder="email@company.com" value="'+escH(m.email||'')+'" data-field="email" type="email"><button class="tm-del" onclick="removeTeamMember('+i+')">✕</button></div>';}).join('');}
+function addTeamMember(){SETTINGS.teamMembers.push({name:'',position:'',email:''});renderTeamInputs();}
+function removeTeamMember(i){SETTINGS.teamMembers.splice(i,1);renderTeamInputs();}
+function getTeamFromInputs(){var rows=document.querySelectorAll('#teamMembersWrap .tm-row');var members=[];rows.forEach(function(row){var name=row.querySelector('[data-field="name"]').value.trim();var position=row.querySelector('[data-field="position"]').value.trim();var email=row.querySelector('[data-field="email"]').value.trim();if(name)members.push({name:name,position:position,email:email});});return members;}
+function renderHolidayList(){var wrap=document.getElementById('holidayListWrap');if(!wrap)return;var holidays=SETTINGS.holidays||[];holidays.sort(function(a,b){return a.date<b.date?-1:1;});var el=document.getElementById('hlCount');if(el)el.textContent='('+holidays.length+')';wrap.innerHTML=holidays.length?holidays.map(function(h,i){return'<div class="hl-row"><div class="hl-date">'+fmtDate(h.date)+'</div><div class="hl-name">'+escH(h.name)+'</div><button class="hl-del" onclick="removeHoliday('+i+')">✕</button></div>';}).join(''):'<div style="font-size:11px;color:var(--dim);padding:8px">No holidays added yet.</div>';}
+function addHolidayManual(){var date=document.getElementById('hl-date-inp').value;var name=document.getElementById('hl-name-inp').value.trim();if(!date||!name){showToast('Date and name required','e');return;}if(!SETTINGS.holidays)SETTINGS.holidays=[];if(SETTINGS.holidays.some(function(h){return h.date===date;})){showToast('Already exists','e');return;}SETTINGS.holidays.push({date:date,name:name});renderHolidayList();document.getElementById('hl-date-inp').value='';document.getElementById('hl-name-inp').value='';}
+function removeHoliday(i){SETTINGS.holidays.splice(i,1);renderHolidayList();}
+function handleHolidayFile(file){var reader=new FileReader();reader.onload=function(e){var data=e.target.result;var workbook;try{if(file.name.endsWith('.csv'))workbook=XLSX.read(data,{type:'binary'});else workbook=XLSX.read(new Uint8Array(data),{type:'array'});var sheet=workbook.Sheets[workbook.SheetNames[0]];var rows=XLSX.utils.sheet_to_json(sheet,{header:1,raw:false});var added=0;if(!SETTINGS.holidays)SETTINGS.holidays=[];rows.forEach(function(row,idx){if(idx===0)return;var rawDate=String(row[0]||'').trim();var name=String(row[1]||'').trim();if(!rawDate||!name)return;var parsed=parseFlexDate(rawDate);if(!parsed)return;if(!SETTINGS.holidays.some(function(h){return h.date===parsed;})){SETTINGS.holidays.push({date:parsed,name:name});added++;}});renderHolidayList();showToast('✓ '+added+' holidays imported!','s');}catch(err){showToast('Failed: '+err.message,'e');}};if(file.name.endsWith('.csv'))reader.readAsBinaryString(file);else reader.readAsArrayBuffer(file);}
+function parseFlexDate(str){if(/^\d{4}-\d{2}-\d{2}$/.test(str))return str;var m=str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');m=str.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');var n=parseInt(str);if(!isNaN(n)&&n>1000){var d=new Date((n-25569)*86400000);return d.toISOString().split('T')[0];}return null;}
+function getMemberEmail(name){var m=(SETTINGS.teamMembers||[]).find(function(x){return x.name===name;});return m?m.email:'';}
+function sendEmail(to,cc,subject,html){var key=SETTINGS.resendKey;if(!key)return Promise.resolve();var from=SETTINGS.senderEmail||'noreply@company.com';var body={from:from,to:[to],subject:subject,html:html};if(cc&&cc!==to)body.cc=[cc];return fetch('https://api.resend.com/emails',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify(body)}).then(function(r){return r.json();}).catch(function(e){console.error('Email error:',e);});}
+function buildEmailTemplate(headline,intro,rows,footer,accentColor){var rowsHtml=rows.map(function(r){return'<tr><td style="padding:8px 16px;font-size:13px;color:#666;border-bottom:1px solid #f0f0f0;white-space:nowrap;font-weight:600;width:160px">'+r.label+'</td><td style="padding:8px 16px;font-size:13px;color:#1a1a1a;border-bottom:1px solid #f0f0f0">'+r.value+'</td></tr>';}).join('');return'<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f5f5f5;font-family:Arial,sans-serif"><div style="max-width:560px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08)"><div style="background:'+accentColor+';padding:28px 32px"><div style="font-size:11px;font-weight:700;letter-spacing:2px;color:rgba(255,255,255,.8);text-transform:uppercase;margin-bottom:6px">'+escH(brandFull().toUpperCase())+'</div><div style="font-size:22px;font-weight:700;color:#fff">'+headline+'</div></div><div style="padding:24px 32px"><p style="font-size:14px;color:#444;line-height:1.7;margin:0 0 20px">'+intro+'</p><table style="width:100%;border-collapse:collapse;background:#fafafa;border-radius:8px;overflow:hidden;margin-bottom:20px">'+rowsHtml+'</table><p style="font-size:13px;color:#888;margin:0;padding-top:16px;border-top:1px solid #f0f0f0">'+footer+'</p></div><div style="background:#f9f9f9;padding:16px 32px;border-top:1px solid #eee;font-size:11px;color:#aaa;text-align:center">Automated message from '+escH(brandFull())+'.</div></div></body></html>';}
+function emailNewTaskAssigned(task){if(!SETTINGS.emailNew)return;var to=getMemberEmail(task.assign);if(!to)return;var html=buildEmailTemplate('New Task Assigned','You have been assigned a new task.',[{label:'Task',value:task.name},{label:'Category',value:task.section},{label:'Due Date',value:fmtDate(task.dueDate)},{label:'Assigned To',value:task.assign}],'Please complete this task by the due date.','#00BFA5');sendEmail(to,'','New Task: '+task.name,html).then(function(){showToast('Email sent!','i');});}
+function emailOverdueAlert(task){if(!SETTINGS.emailOverdue)return;var to=getMemberEmail(task.assign);if(!to)return;var days=daysDiff(task.dueDate,today());var html=buildEmailTemplate('Task is Overdue','The following task has missed its due date.',[{label:'Task',value:task.name},{label:'Category',value:task.section},{label:'Due Date',value:fmtDate(task.dueDate)},{label:'Days Overdue',value:days+'d'},{label:'Assigned To',value:task.assign}],'Please complete immediately.','#FF4444');sendEmail(to,SETTINGS.ownerEmail,'Overdue: '+task.name,html);}
+function emailDailyReminder(taskList){if(!SETTINGS.emailDaily||!taskList.length)return;var byAssignee={};taskList.forEach(function(t){var email=getMemberEmail(t.assign);if(!email)return;if(!byAssignee[email])byAssignee[email]={email:email,name:t.assign,tasks:[]};byAssignee[email].tasks.push(t);});Object.values(byAssignee).forEach(function(group){var rows=group.tasks.map(function(t){return{label:t.section,value:t.name+' (Due: '+fmtDate(t.dueDate)+')'};});var html=buildEmailTemplate('Your Tasks Due Today','Hello '+group.name+', tasks due today:',rows,'Log in to mark tasks as completed.','#FFB800');sendEmail(group.email,'','Tasks Due Today — '+fmtDate(today()),html);});}
+
+/* ══════════════════════════════════════════════════════════
+   BRAND / ROLES / CATEGORIES / WEEK-OFF / DATA  —  SETTINGS UI
+   ══════════════════════════════════════════════════════════ */
+function renderBrandInputs(){var b=SETTINGS.brand||DEFAULT_SETTINGS.brand;setVal('sp-brand-n1',b.n1);setVal('sp-brand-n2',b.n2);setVal('sp-brand-sub',b.sub);setVal('sp-brand-logo',b.logo);setVal('sp-brand-foot',b.foot);}
+function saveBrand(){
+  SETTINGS.brand={n1:(document.getElementById('sp-brand-n1').value||'TASK').trim(),
+                  n2:(document.getElementById('sp-brand-n2').value||'FMS').trim(),
+                  sub:document.getElementById('sp-brand-sub').value.trim(),
+                  logo:(document.getElementById('sp-brand-logo').value||'\u{1F4C1}').trim(),
+                  foot:document.getElementById('sp-brand-foot').value.trim()};
+  saveSettings(SETTINGS);applyBrand();showToast('✓ Branding saved!','s');
+}
+
+function renderRoleInputs(){
+  var wrap=document.getElementById('roleInputsWrap');if(!wrap)return;
+  var cats=catNames();
+  wrap.innerHTML=(SETTINGS.roles||DEFAULT_ROLES).map(function(r,i){
+    var catBoxes=cats.map(function(c){
+      return '<label class="rl-cat"><input type="checkbox" data-ridx="'+i+'" data-cat="'+escH(c)+'"'+((r.cats||[]).indexOf(c)>-1?' checked':'')+'> '+escH(c)+'</label>';
+    }).join('');
+    return '<div class="rl-row" data-ridx="'+i+'">'
+      +'<input class="sp-input" style="text-align:center;padding:6px 2px" maxlength="4" data-rf="icon" value="'+escH(r.icon)+'">'
+      +'<input class="sp-input" style="padding:6px 8px;font-size:11px" data-rf="name" placeholder="Role name" value="'+escH(r.name)+'">'
+      +'<input class="sp-input" style="padding:6px 8px;font-size:11px" data-rf="pass" type="text" value="'+escH(SETTINGS.passwords[r.key]||'')+'">'
+      +'<select class="sp-input" style="padding:6px 4px;font-size:10px" data-rf="access">'
+        +'<option value="full"'+(r.access==='full'?' selected':'')+'>Full</option>'
+        +'<option value="edit"'+(r.access==='edit'?' selected':'')+'>Team</option>'
+        +'<option value="view"'+(r.access==='view'?' selected':'')+'>View</option>'
+      +'</select>'
+      +'<div class="rl-cats" data-catsfor="'+i+'"'+(r.access==='edit'?'':' style="display:none"')+'>'+catBoxes+'</div>'
+      +'</div>';
+  }).join('');
+  wrap.querySelectorAll('select[data-rf="access"]').forEach(function(sel){
+    sel.addEventListener('change',function(){
+      var idx=sel.closest('.rl-row').getAttribute('data-ridx');
+      var box=wrap.querySelector('[data-catsfor="'+idx+'"]');
+      if(box)box.style.display=(sel.value==='edit')?'':'none';
+    });
+  });
+}
+function saveRoles(){
+  var wrap=document.getElementById('roleInputsWrap');
+  var rows=wrap.querySelectorAll('.rl-row');
+  var roles=[],pw={};
+  rows.forEach(function(row,i){
+    var key=DEFAULT_ROLES[i].key;
+    var name=row.querySelector('[data-rf="name"]').value.trim()||DEFAULT_ROLES[i].name;
+    var icon=row.querySelector('[data-rf="icon"]').value.trim()||DEFAULT_ROLES[i].icon;
+    var access=row.querySelector('[data-rf="access"]').value;
+    var pass=row.querySelector('[data-rf="pass"]').value.trim()||SETTINGS.passwords[key];
+    var cats=[];row.querySelectorAll('input[type="checkbox"][data-cat]').forEach(function(cb){if(cb.checked)cats.push(cb.getAttribute('data-cat'));});
+    roles.push({key:key,name:name,icon:icon,access:access,cats:cats});pw[key]=pass;
+  });
+  if(!roles.some(function(r){return r.access==='full';})){showToast('Kam se kam 1 role Full access wala hona chahiye','e');return;}
+  SETTINGS.roles=roles;SETTINGS.passwords=pw;saveSettings(SETTINGS);
+  renderLoginRoles();
+  var rp=document.getElementById('rolePill');if(rp)rp.textContent=roleLabel(currentRole);
+  buildAll();showToast('✓ Roles saved!','s');
+}
+
+function renderCatInputs(){
+  var wrap=document.getElementById('catInputsWrap');if(!wrap)return;
+  wrap.innerHTML=catList().map(function(c,i){
+    return '<div class="cat-row" data-idx="'+i+'" data-orig="'+escH(c.name)+'">'
+      +'<input class="sp-input" style="padding:6px 8px;font-size:11px" data-cf="name" value="'+escH(c.name)+'">'
+      +'<input type="color" data-cf="color" value="'+escH(c.color||'#8892a6')+'">'
+      +'<button class="cat-del" onclick="removeCategory('+i+')">✕</button></div>';
+  }).join('');
+}
+function addCategory(){SETTINGS.categories=catList().concat([{name:'New Category',color:'#8892a6'}]);renderCatInputs();}
+function removeCategory(i){
+  var list=catList().slice();
+  if(list.length<=1){showToast('Kam se kam 1 category zaroori hai','e');return;}
+  list.splice(i,1);SETTINGS.categories=list;renderCatInputs();
+}
+function saveCategories(){
+  var rows=document.querySelectorAll('#catInputsWrap .cat-row');
+  var cats=[],renames=[],seen={};
+  var bad=false;
+  rows.forEach(function(row){
+    var name=row.querySelector('[data-cf="name"]').value.trim();
+    var color=row.querySelector('[data-cf="color"]').value;
+    var orig=row.getAttribute('data-orig');
+    if(!name){bad=true;return;}
+    if(seen[name]){bad=true;return;}
+    seen[name]=1;
+    cats.push({name:name,color:color});
+    if(orig&&orig!==name)renames.push({from:orig,to:name});
+  });
+  if(bad||!cats.length){showToast('Category naam khaali ya duplicate nahi ho sakta','e');return;}
+  SETTINGS.categories=cats;
+  // keep role category-access in sync with renames
+  (SETTINGS.roles||[]).forEach(function(r){
+    r.cats=(r.cats||[]).map(function(c){var m=renames.filter(function(x){return x.from===c;})[0];return m?m.to:c;})
+                       .filter(function(c){return cats.some(function(x){return x.name===c;});});
+  });
+  saveSettings(SETTINGS);renderCatInputs();renderRoleInputs();renderCatFilters();populateCatSelects();
+  if(!renames.length){buildAll();showToast('✓ Categories saved!','s');return;}
+  setSS('saving','Renaming tasks...');
+  Promise.all(renames.map(function(rn){
+    return sbFetch('/'+TABLE+'?section=eq.'+encodeURIComponent(rn.from),'PATCH',{section:rn.to}).then(function(){
+      (allTasks||[]).forEach(function(t){if(t.section===rn.from)t.section=rn.to;});
+      (tasks||[]).forEach(function(t){if(t.section===rn.from)t.section=rn.to;});
+    });
+  })).then(function(){setSS('saved','✓ Saved');buildAll();showToast('✓ Categories saved + '+renames.length+' rename applied to old tasks','s');})
+    .catch(function(e){setSS('err','Error');console.error(e);showToast('Categories saved, but old tasks rename failed','e');});
+}
+
+function renderWeekOffInputs(){
+  var wrap=document.getElementById('weekOffDays');if(!wrap)return;
+  var off=SETTINGS.weekOffDays||[0];
+  wrap.innerHTML=[0,1,2,3,4,5,6].map(function(d){
+    return '<div class="wo-day'+(off.indexOf(d)>-1?' on':'')+'" data-day="'+d+'" onclick="toggleWeekOff('+d+')">'+dayName(d)+'</div>';
+  }).join('');
+  renderWorkDates();
+}
+function toggleWeekOff(d){
+  var off=(SETTINGS.weekOffDays||[]).slice();
+  var i=off.indexOf(d);
+  if(i>-1)off.splice(i,1);else off.push(d);
+  if(off.length>=7){showToast('Saare 7 din off nahi ho sakte','e');return;}
+  SETTINGS.weekOffDays=off;renderWeekOffInputs();
+}
+function renderWorkDates(){
+  var wrap=document.getElementById('workDateWrap');if(!wrap)return;
+  var list=(SETTINGS.workDates||[]).slice().sort();
+  wrap.innerHTML=list.length?list.map(function(d,i){
+    return '<div class="wd-row"><div style="flex:1;font-family:JetBrains Mono,monospace">'+fmtDate(d)+' · '+dayName(new Date(d).getDay())+'</div><button class="cat-del" onclick="removeWorkDate('+i+')">✕</button></div>';
+  }).join(''):'<div style="font-size:11px;color:var(--dim);padding:8px">Koi special working day nahi.</div>';
+}
+function addWorkDate(){
+  var d=document.getElementById('wd-date-inp').value;
+  if(!d){showToast('Date select karein','e');return;}
+  if(!SETTINGS.workDates)SETTINGS.workDates=[];
+  if(SETTINGS.workDates.indexOf(d)>-1){showToast('Already added','e');return;}
+  SETTINGS.workDates.push(d);renderWorkDates();document.getElementById('wd-date-inp').value='';
+}
+function removeWorkDate(i){var l=(SETTINGS.workDates||[]).slice().sort();var v=l[i];SETTINGS.workDates=SETTINGS.workDates.filter(function(x){return x!==v;});renderWorkDates();}
+function saveWeekOff(){saveSettings(SETTINGS);buildAll();showToast('✓ Week off saved!','s');}
+
+function sqlText(){
+  var t=(SETTINGS.db&&SETTINGS.db.table)||'task_fms_tasks';
+  return 'create table if not exists public.'+t+' (\n'
+    +'  id text primary key,\n  section text,\n  name text,\n  freq text,\n'
+    +'  due_date date,\n  actual_date date,\n  status text,\n  assigned_to text,\n'
+    +'  notes text,\n  month_key text,\n  is_custom boolean default false,\n'
+    +'  proof_link text,\n  updated_at timestamptz default now()\n);\n\n'
+    +'alter table public.'+t+' enable row level security;\n'
+    +'create policy "anon all" on public.'+t+' for all using (true) with check (true);';
+}
+function renderDbInputs(){var d=SETTINGS.db||DEFAULT_SETTINGS.db;setVal('sp-db-url',d.url);setVal('sp-db-key',d.key);setVal('sp-db-table',d.table);var b=document.getElementById('sqlBox');if(b)b.value=sqlText();}
+function saveDb(){
+  SETTINGS.db={url:document.getElementById('sp-db-url').value.trim().replace(/\/$/,''),
+               key:document.getElementById('sp-db-key').value.trim(),
+               table:document.getElementById('sp-db-table').value.trim()||'task_fms_tasks'};
+  saveSettings(SETTINGS);applyDb();renderDbInputs();
+  loadedMonths={};allTasks=[];tasks=[];loadData();
+  showToast('✓ Reconnected','s');
+}
+function testDb(){
+  setSS('saving','Testing...');
+  sbFetch('/'+TABLE+'?limit=1','GET').then(function(){setSS('saved','✓ OK');showToast('✓ Connection OK — table "'+TABLE+'" mil gaya','s');})
+    .catch(function(e){setSS('err','Failed');console.error(e);showToast('✗ Failed — table ya key check karein','e');});
+}
+function copySql(){var b=document.getElementById('sqlBox');b.select();try{document.execCommand('copy');showToast('✓ SQL copied','s');}catch(e){showToast('Copy failed','e');}}
+function resetSettings(){
+  if(!confirm('Sabhi settings default pe reset ho jaayengi (tasks safe rahenge). Continue?'))return;
+  try{localStorage.removeItem('taskfms_settings_v1');}catch(e){}
+  SETTINGS=loadSettings();applyDb();applyTheme(SETTINGS.theme);applyBrand();renderLoginRoles();populateSettingsInputs();renderCatFilters();populateCatSelects();buildAll();
+  showToast('✓ Settings reset','s');
+}
+
+var overdueEmailsSent=[];
+function checkAndSendOverdueEmails(tasks){if(!SETTINGS.emailOverdue||!SETTINGS.resendKey)return;var curYM=getYM();filterTasksByRole(tasks).filter(function(t){return t.monthKey===curYM&&calcStatus(t)==='Overdue'&&!t.actualDate;}).forEach(function(t){if(overdueEmailsSent.indexOf(t.id)<0){overdueEmailsSent.push(t.id);emailOverdueAlert(t);}});}
+function checkDailyReminder(tasks){if(!SETTINGS.emailDaily||!SETTINGS.resendKey)return;var now=new Date();var todayStr=today();if(SETTINGS.lastReminderDate===todayStr)return;var parts=(SETTINGS.reminderTime||'09:00').split(':');if(now.getHours()>parseInt(parts[0])||(now.getHours()===parseInt(parts[0])&&now.getMinutes()>=parseInt(parts[1]||0))){var due=filterTasksByRole(tasks).filter(function(t){return t.dueDate===todayStr&&!t.actualDate;});if(due.length){emailDailyReminder(due);SETTINGS.lastReminderDate=todayStr;saveSettings(SETTINGS);}}}
+
+/* roles are dynamic — see SETTINGS.roles */
+var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var currentRole=null,viewingTaskId=null,taskFilt='All';
+var tasks=[];
+
+function today(){return new Date().toISOString().split('T')[0];}
+function fmtDate(d){if(!d)return'—';var x=new Date(d);return x.getDate()+' '+MON[x.getMonth()]+' '+String(x.getFullYear()).slice(2);}
+function escH(t){if(!t)return'';return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function genId(){return'E'+Date.now()+Math.floor(Math.random()*1000);}
+function getYM(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+function ymLabel(ym){if(!ym)return'';var p=ym.split('-');return MON[parseInt(p[1])-1]+' '+p[0];}
+function daysDiff(a,b){return Math.round((new Date(b)-new Date(a))/86400000);}
+function getWeekNum(dateStr){var d=new Date(dateStr);return Math.ceil(d.getDate()/7);}
+function getMonthOptions(){var now=new Date();var opts=[];for(var i=-5;i<=12;i++){var d=new Date(now.getFullYear(),now.getMonth()+i,1);var ym=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');opts.push({ym:ym,label:MON[d.getMonth()]+' '+d.getFullYear()});}return opts;}
+function populateMonthSelects(){var opts=getMonthOptions();var cur=getYM();var html=opts.map(function(o){return'<option value="'+o.ym+'"'+(o.ym===cur?' selected':'')+'>'+o.label+'</option>';}).join('');document.getElementById('taskMonthSel').innerHTML=html;document.getElementById('misMonthSel').innerHTML=html;}
+function populateCatSelects(){var el=document.getElementById('at-section');if(!el)return;var prev=el.value;var r=curRole();var allowed=(r&&r.access==='edit'&&(r.cats||[]).length)?r.cats:catNames();el.innerHTML=allowed.map(function(c){return'<option>'+escH(c)+'</option>';}).join('');if(allowed.indexOf(prev)>-1)el.value=prev;}
+function renderCatFilters(){var w=document.getElementById('catFltWrap');if(!w)return;w.innerHTML=catNames().map(function(c){return'<button class="flt-btn" data-f="'+escH(c)+'">'+escH(c)+'</button>';}).join('');bindCatFilters();}
+function bindCatFilters(){document.querySelectorAll('#view-tasks .flt-btn[data-f]').forEach(function(btn){btn.onclick=function(){taskFilt=btn.getAttribute('data-f');document.querySelectorAll('#view-tasks .flt-btn[data-f]').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');buildTasksView(document.getElementById('taskMonthSel').value||getYM());};});}
+function renderLoginRoles(){var w=document.getElementById('loginRoles');if(!w)return;w.innerHTML=(SETTINGS.roles||DEFAULT_ROLES).map(function(r){return'<button class="l-role-btn" type="button" onclick="pickRole(\''+r.key+'\',this)"><div class="l-role-chk">\u2713</div><div class="l-role-icon">'+escH(r.icon)+'</div><div class="l-role-name">'+escH(r.name)+'</div></button>';}).join('');}
+function populateAssignDropdowns(){populateCatSelects();var members=SETTINGS.teamMembers||[];var opts='<option value="">-- Select --</option>'+members.map(function(m){return'<option>'+escH(m.name)+'</option>';}).join('');['taskAssign','at-assign'].forEach(function(id){var el=document.getElementById(id);if(el)el.innerHTML=opts;});}
+function setSS(s,t){var d=document.getElementById('syncDot'),tx=document.getElementById('syncTxt');d.className='sync-dot '+s;tx.textContent=t;}
+// ══════════════════════════════════════════════════════════
+// SMART LOADING — loads only needed months, caches results
+// ══════════════════════════════════════════════════════════
+var loadedMonths = {};  // cache: {ym: [tasks]}
+var allTasks = [];      // global cache
+
+function loadMonth(ym, cb) {
+  if(loadedMonths[ym]) { if(cb)cb(); return; }  // already cached
+  setSS('saving', 'Loading ' + ymLabel(ym) + '...');
+  var from = ym + '-01';
+  var to   = ym + '-31';
+  sbFetch('/'+TABLE+'?order=due_date.asc&due_date=gte.'+from+'&due_date=lte.'+to+'&limit=2000','GET')
+    .then(function(rows){
+      var mapped = (rows||[]).map(mapRow);
+      loadedMonths[ym] = mapped;
+      // merge into allTasks (avoid duplicates)
+      var ids = new Set(allTasks.map(function(t){return t.id;}));
+      mapped.forEach(function(t){ if(!ids.has(t.id)) allTasks.push(t); });
+      tasks = allTasks;
+      setSS('saved','✓ Loaded');
+      if(cb) cb();
+    })
+    .catch(function(e){ setSS('err','Load failed'); console.error(e); showToast('Load failed','e'); });
+}
+
+function loadDateRange(from, to, cb) {
+  setSS('saving','Loading range...');
+  sbFetch('/'+TABLE+'?order=due_date.asc&due_date=gte.'+from+'&due_date=lte.'+to+'&limit=5000','GET')
+    .then(function(rows){
+      var mapped = (rows||[]).map(mapRow);
+      var ids = new Set(allTasks.map(function(t){return t.id;}));
+      mapped.forEach(function(t){ if(!ids.has(t.id)) allTasks.push(t); });
+      tasks = allTasks;
+      setSS('saved','✓ Loaded');
+      if(cb) cb();
+    })
+    .catch(function(e){ setSS('err','Load failed'); console.error(e); });
+}
+
+function loadData(){
+  var curYM = getYM();
+  // Load current month + prev month (for overdue check)
+  var prevDate = new Date();
+  prevDate.setMonth(prevDate.getMonth()-1);
+  var prevYM = prevDate.getFullYear()+'-'+String(prevDate.getMonth()+1).padStart(2,'0');
+
+  setSS('saving','Loading...');
+  // Load last 2 months together for dashboard
+  var from = prevYM + '-01';
+  var to   = curYM  + '-31';
+  sbFetch('/'+TABLE+'?order=due_date.asc&due_date=gte.'+from+'&due_date=lte.'+to+'&limit=5000','GET')
+    .then(function(rows){
+      allTasks = (rows||[]).map(mapRow);
+      tasks = allTasks;
+      loadedMonths[curYM] = allTasks.filter(function(t){return t.dueDate&&t.dueDate.substring(0,7)===curYM;});
+      loadedMonths[prevYM] = allTasks.filter(function(t){return t.dueDate&&t.dueDate.substring(0,7)===prevYM;});
+      setSS('saved','✓ Loaded');
+      buildAll();
+      checkAndSendOverdueEmails(tasks);
+      checkDailyReminder(tasks);
+    })
+    .catch(function(e){ setSS('err','Load failed'); console.error(e); showToast('Load failed — check Supabase','e'); });
+}
+function mapRow(r){return{id:r.id,section:r.section||'',name:r.name||'',freq:r.freq||'Monthly',dueDate:r.due_date||'',actualDate:r.actual_date||'',status:r.status||'Pending',assign:r.assigned_to||'',notes:r.notes||'',monthKey:r.month_key||'',isCustom:r.is_custom||false,proofLink:r.proof_link||''};}
+function saveTask(task,cb){setSS('saving','Saving...');var row={id:task.id,section:task.section,name:task.name,freq:task.freq,due_date:task.dueDate,actual_date:task.actualDate||null,status:task.status,assigned_to:task.assign||'',notes:task.notes||'',month_key:task.monthKey,is_custom:task.isCustom||false,proof_link:task.proofLink||'',updated_at:new Date().toISOString()};sbFetch('/'+TABLE+'?on_conflict=id','POST',row).then(function(){setSS('saved','✓ Saved');if(cb)cb();}).catch(function(){sbFetch('/'+TABLE+'?id=eq.'+task.id,'PATCH',row).then(function(){setSS('saved','✓ Saved');if(cb)cb();}).catch(function(e){setSS('err','Save failed');showToast('Save failed','e');console.error(e);});});}
+function deleteTask_db(id,cb){sbFetch('/'+TABLE+'?id=eq.'+id,'DELETE').then(function(){setSS('saved','✓ Saved');if(cb)cb();}).catch(function(){setSS('err','Error');showToast('Delete failed','e');});}
+function calcStatus(task){if(task.actualDate)return'Done';if(task.dueDate<today())return'Overdue';if(task.dueDate===today())return'Due Today';return'Pending';}
+
+// ✅ FIX: getTasksForMonth uses role filter
+function getTasksForMonth(ym){return filterTasksByRole((allTasks||tasks).filter(function(t){return t.dueDate&&t.dueDate.substring(0,7)===ym;}));}
+
+function renderProofIcon(task){
+  if(!task.proofLink)return'<span style="color:var(--dim);font-size:10px">—</span>';
+  if(isAdmin())return'<a href="'+escH(task.proofLink)+'" target="_blank" rel="noopener" class="proof-link-icon" title="Open proof" onclick="event.stopPropagation()">🔗</a>';
+  return'<span class="proof-link-icon disabled" title="Owner only">🔒</span>';
+}
+function freqBadge(f){return f==='Daily'?'fb-d':f==='Weekly'?'fb-w':f==='Quarterly'?'fb-q':f==='Annual'?'fb-a':'fb-m';}
+
+function buildAll(){var curYM=getYM();var selTaskYM=document.getElementById('taskMonthSel')?document.getElementById('taskMonthSel').value||curYM:curYM;var selMisYM=document.getElementById('misMonthSel')?document.getElementById('misMonthSel').value||curYM:curYM;document.getElementById('monthPill').textContent='📅 '+ymLabel(curYM);tasks.forEach(function(t){if(!t.actualDate)t.status=calcStatus(t);});var curTasks=getTasksForMonth(curYM);var overdue=curTasks.filter(function(t){return calcStatus(t)==='Overdue';});document.getElementById('overduePill').textContent='⚠ '+overdue.length+' Overdue';populateAssignDropdowns();buildDash(curYM,curTasks);buildTasksView(selTaskYM);buildMIS(selMisYM);}
+
+function buildDash(ym,curTasks){var total=curTasks.length,done=curTasks.filter(function(t){return t.actualDate;}).length;var overdue=curTasks.filter(function(t){return calcStatus(t)==='Overdue';}).length;var pending=curTasks.filter(function(t){return calcStatus(t)==='Pending';}).length;var dueToday=curTasks.filter(function(t){return calcStatus(t)==='Due Today';}).length;var pct=total>0?Math.round(done/total*100):0;document.getElementById('dk0').textContent=total;document.getElementById('dk1').textContent=done;document.getElementById('dk2').textContent=overdue;document.getElementById('dk3').textContent=pending;document.getElementById('dk4').textContent=dueToday;document.getElementById('dk5').textContent=pct+'%';document.getElementById('dk2s').textContent=overdue>0?'Need action!':'All clear ✓';document.getElementById('dk2s').style.color=overdue>0?'var(--red)':'var(--green)';document.getElementById('dashMonthLabel').textContent=ymLabel(ym);var sections=catNames();var sColors=catColorMap();document.getElementById('sectionChart').innerHTML=sections.map(function(sec){var st=curTasks.filter(function(t){return t.section===sec;});var sd=st.filter(function(t){return t.actualDate;}).length;var so=st.filter(function(t){return calcStatus(t)==='Overdue';}).length;var sp=st.length-sd-so;var pct2=st.length>0?Math.round(sd/st.length*100):0;return'<div class="sc-row"><div class="sc-lbl">'+sec+'</div><div class="sc-bar"><div class="sc-fill" style="width:'+Math.max(pct2,sd>0?5:0)+'%;background:'+sColors[sec]+'">'+( pct2>15?pct2+'%':'')+'</div></div><div class="sc-nums"><div class="sc-n" style="color:var(--green)">✓ '+sd+'</div><div class="sc-n" style="color:var(--red)">⚠ '+so+'</div><div class="sc-n" style="color:var(--dim)">○ '+sp+'</div></div></div>';}).join('');var odl=curTasks.filter(function(t){return calcStatus(t)==='Overdue';}).sort(function(a,b){return a.dueDate<b.dueDate?-1:1;});document.getElementById('overdueList').innerHTML=odl.length?odl.map(function(t){var dd=daysDiff(t.dueDate,today());return'<div onclick="openTask(\''+t.id+'\')" style="display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:8px;background:rgba(255,68,68,.06);border:1px solid rgba(255,68,68,.15);margin-bottom:6px;cursor:pointer"><div style="width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0"></div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escH(t.name)+'</div><div style="font-size:9px;color:var(--dim)">'+t.section+' · Due '+fmtDate(t.dueDate)+'</div></div><div style="font-size:10px;font-weight:700;color:var(--red);flex-shrink:0">'+dd+'d late</div></div>';}).join(''):'<div style="text-align:center;padding:20px;color:var(--dim);font-size:11px">🎉 No overdue!</div>';var now=new Date();var weekEnd=new Date(now);weekEnd.setDate(now.getDate()+7);var dwl=curTasks.filter(function(t){if(t.actualDate)return false;var d=new Date(t.dueDate);return d>=now&&d<=weekEnd;}).sort(function(a,b){return a.dueDate<b.dueDate?-1:1;});document.getElementById('dueSoonList').innerHTML=dwl.length?dwl.map(function(t){var isToday=t.dueDate===today();return'<div onclick="openTask(\''+t.id+'\')" style="display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:8px;background:rgba(255,184,0,.06);border:1px solid rgba(255,184,0,.15);margin-bottom:6px;cursor:pointer"><div style="width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0"></div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escH(t.name)+'</div><div style="font-size:9px;color:var(--dim)">'+t.section+' · '+fmtDate(t.dueDate)+'</div></div><div style="font-size:10px;font-weight:700;color:'+(isToday?'var(--red)':'var(--gold)')+';flex-shrink:0">'+(isToday?'TODAY':fmtDate(t.dueDate))+'</div></div>';}).join(''):'<div style="text-align:center;padding:20px;color:var(--dim);font-size:11px">✅ Nothing due!</div>';document.getElementById('dashTaskBody').innerHTML=curTasks.map(function(t){var st=calcStatus(t);var spc={Done:'sp-done',Overdue:'sp-overdue',Pending:'sp-pending','Due Today':'sp-today'}[st]||'sp-pending';return'<tr onclick="openTask(\''+t.id+'\')"><td>'+secTag(t.section)+'</td><td style="font-size:11px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escH(t.name)+'</td><td style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--sub)">'+fmtDate(t.dueDate)+'</td><td><span class="freq-badge '+freqBadge(t.freq)+'">'+t.freq+'</span></td><td style="font-size:10px;color:var(--dim)">'+escH(t.assign||'—')+'</td><td><span class="status-pill '+spc+'">'+( st==='Done'?'✓ ':st==='Overdue'?'⚠ ':st==='Due Today'?'📅 ':'○ ')+st+'</span></td><td>'+renderProofIcon(t)+'</td></tr>';}).join('');}
+
+// ✅ FIX: buildTasksView — cross-month date filter
+function buildTasksView(ym){
+  var q=document.getElementById('taskSrch')?document.getElementById('taskSrch').value.toLowerCase():'';
+  var fromDate=document.getElementById('taskFromDate')?document.getElementById('taskFromDate').value:'';
+  var toDate=document.getElementById('taskToDate')?document.getElementById('taskToDate').value:'';
+  // Smart load: fetch from Supabase if not cached
+  function toISO_local(d){if(!d)return'';if(/^\d{4}-\d{2}-\d{2}$/.test(d))return d;var p=d.split(/[-\/]/);if(p.length===3&&p[0].length<=2)return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');return d;}
+  var fISO=toISO_local(fromDate); var tISO=toISO_local(toDate);
+  if(fISO && tISO && !loadedMonths['range_'+fISO+'_'+tISO]) {
+    loadedMonths['range_'+fISO+'_'+tISO] = true; // mark as loading
+    loadDateRange(fISO, tISO, function(){ buildTasksView(ym); });
+    return;
+  }
+  if(!fISO && !tISO && !loadedMonths[ym]) {
+    loadMonth(ym, function(){ buildTasksView(ym); });
+    return;
+  }
+  // Normalize dates to YYYY-MM-DD for safe string comparison
+  function toISO(d){if(!d)return'';if(/^\d{4}-\d{2}-\d{2}$/.test(d))return d;var p=d.split(/[-\/]/);if(p.length===3&&p[0].length<=2)return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');return d;}
+  var fromISO=toISO(fromDate);
+  var toISO2=toISO(toDate);
+
+  // Date filter active → search ALL tasks; else use month filter
+  // When month selected (no date filter): filter by due_date month
+  // When date filter active: search ALL tasks
+  function getTasksByMonth(ymStr) {
+    var filtered = filterTasksByRole(tasks).filter(function(t) {
+      if (!t.dueDate) return false;
+      return t.dueDate.substring(0, 7) === ymStr;
+    });
+    return filtered;
+  }
+  var pool=(fromISO||toISO2)?filterTasksByRole(tasks):getTasksByMonth(ym);
+  var data=pool.filter(function(t){var st=calcStatus(t);if(catNames().indexOf(taskFilt)>-1)return t.section===taskFilt;if(taskFilt==='Overdue')return st==='Overdue';if(taskFilt==='Pending')return st==='Pending'||st==='Due Today';if(taskFilt==='Done')return!!t.actualDate;return true;}).filter(function(t){if(!q)return true;return(t.name+t.section+t.assign).toLowerCase().indexOf(q)>-1;}).filter(function(t){var td=t.dueDate?t.dueDate.substring(0,10):'';if(fromISO&&td<fromISO)return false;if(toISO2&&td>toISO2)return false;return true;});
+  document.getElementById('taskBody').innerHTML=data.length?data.map(function(t,i){var st=calcStatus(t);var spc={Done:'sp-done',Overdue:'sp-overdue',Pending:'sp-pending','Due Today':'sp-today'}[st]||'sp-pending';var isHol=isHoliday(t.dueDate);return'<tr onclick="openTask(\''+t.id+'\')"><td style="font-size:10px;color:var(--dim);font-family:JetBrains Mono,monospace">'+(i+1)+'</td><td>'+secTag(t.section)+'</td><td style="font-size:11px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escH(t.name)+'</td><td><span class="freq-badge '+freqBadge(t.freq)+'">'+t.freq+'</span></td><td style="font-family:JetBrains Mono,monospace;font-size:10px;color:'+(st==='Overdue'?'var(--red)':st==='Due Today'?'var(--gold)':'var(--sub)')+'">'+fmtDate(t.dueDate)+(isHol?' 🏖':'')+'</td><td style="font-size:10px;color:var(--sub)">'+escH(t.assign||'—')+'</td><td><span class="status-pill '+spc+'">'+( st==='Done'?'✓ ':st==='Overdue'?'⚠ ':st==='Due Today'?'📅 ':'○ ')+st+'</span></td><td style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--green)">'+fmtDate(t.actualDate)+'</td><td style="font-size:10px;color:var(--dim);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escH(t.notes||'—')+'</td><td>'+renderProofIcon(t)+'</td></tr>';}).join(''):'<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--dim)">No tasks found</td></tr>';}
+
+// ✅ FIX: buildMIS — cross-month date filter
+function buildMIS(ym){
+  var misFrom=document.getElementById('misFromDate')?document.getElementById('misFromDate').value:'';
+  var misTo=document.getElementById('misToDate')?document.getElementById('misToDate').value:'';
+  function normD(d){if(!d)return'';if(/^\d{4}-\d{2}-\d{2}$/.test(d))return d;var p=d.split(/[-\/]/);if(p.length===3&&p[0].length<=2)return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');return d;}
+  var mFrom=normD(misFrom);var mTo=normD(misTo);
+  if(mFrom&&mTo&&!loadedMonths['range_'+mFrom+'_'+mTo]){
+    loadedMonths['range_'+mFrom+'_'+mTo]=true;
+    loadDateRange(mFrom,mTo,function(){buildMIS(ym);});
+    return;
+  }
+  var misPool=(mFrom||mTo)
+    ?filterTasksByRole(allTasks)
+    :filterTasksByRole(allTasks).filter(function(t){return t.dueDate&&t.dueDate.substring(0,7)===ym;});
+  var mt=misPool.filter(function(t){var td=t.dueDate?t.dueDate.substring(0,10):'';if(mFrom&&td<mFrom)return false;if(mTo&&td>mTo)return false;return true;});
+  var total=mt.length,done=mt.filter(function(t){return t.actualDate;}).length;var overdue=mt.filter(function(t){return calcStatus(t)==='Overdue';}).length;var delayed=mt.filter(function(t){return t.actualDate&&t.dueDate&&t.actualDate>t.dueDate;}).length;
+  document.getElementById('misCards').innerHTML=[{c:'mc-b',l:'Total Tasks',v:total,s:'Planned'},{c:'mc-g',l:'Completed',v:done,s:'Done ✓'},{c:'mc-r',l:'Overdue',v:overdue,s:'Missed deadline'},{c:'mc-o',l:'Delayed',v:delayed,s:'Done late'},].map(function(c){return'<div class="mis-card '+c.c+'"><div class="mis-lbl">'+c.l+'</div><div class="mis-val">'+c.v+'</div><div class="mis-sub">'+c.s+'</div></div>';}).join('');
+  var weeks={1:[],2:[],3:[],4:[],5:[]};mt.forEach(function(t){var w=getWeekNum(t.dueDate);if(weeks[w])weeks[w].push(t);});var wkLabels={1:'Week 1 (1-7)',2:'Week 2 (8-14)',3:'Week 3 (15-21)',4:'Week 4 (22-28)',5:'Week 5 (29+)'};
+  document.getElementById('weekGrid').innerHTML=Object.keys(weeks).map(function(w){var wt=weeks[w];var wd=wt.filter(function(t){return t.actualDate;}).length;var wo=wt.filter(function(t){return calcStatus(t)==='Overdue';}).length;var wp=wt.length-wd-wo;var dPct=wt.length>0?Math.round(wd/wt.length*100):0;var oPct=wt.length>0?Math.round(wo/wt.length*100):0;return'<div class="week-card"><div class="wk-label">'+wkLabels[w]+'</div><div style="font-family:Rajdhani,sans-serif;font-size:22px;font-weight:700;color:var(--teal);margin-bottom:8px">'+wt.length+' <span style="font-size:12px;color:var(--dim)">tasks</span></div><div class="wk-bar-wrap"><div class="wk-bar-row"><div class="wk-bar-lbl" style="color:var(--green)">Done</div><div class="wk-bar"><div class="wk-fill" style="width:'+dPct+'%;background:var(--green)"></div></div><div class="wk-num" style="color:var(--green)">'+wd+'</div></div><div class="wk-bar-row"><div class="wk-bar-lbl" style="color:var(--red)">Overdue</div><div class="wk-bar"><div class="wk-fill" style="width:'+oPct+'%;background:var(--red)"></div></div><div class="wk-num" style="color:var(--red)">'+wo+'</div></div><div class="wk-bar-row"><div class="wk-bar-lbl" style="color:var(--dim)">Pending</div><div class="wk-bar"><div class="wk-fill" style="width:'+(100-dPct-oPct)+'%;background:var(--dim)"></div></div><div class="wk-num" style="color:var(--dim)">'+wp+'</div></div></div></div>';}).join('');
+  var secs=catNames();var sColors2=catColorMap();
+  document.getElementById('misSectionChart').innerHTML='<div class="sc-hdr">'+ymLabel(ym)+' — Category Performance</div>'+secs.map(function(sec){var st=mt.filter(function(t){return t.section===sec;});var sd=st.filter(function(t){return t.actualDate;}).length;var so=st.filter(function(t){return calcStatus(t)==='Overdue';}).length;var sp=st.length-sd-so;var pct2=st.length>0?Math.round(sd/st.length*100):0;return'<div class="sc-row"><div class="sc-lbl">'+sec+' ('+st.length+')</div><div class="sc-bar"><div class="sc-fill" style="width:'+Math.max(pct2,sd>0?5:0)+'%;background:'+sColors2[sec]+'">'+( pct2>15?pct2+'%':'')+'</div></div><div class="sc-nums"><div class="sc-n" style="color:var(--green)">✓ '+sd+'</div><div class="sc-n" style="color:var(--red)">⚠ '+so+'</div><div class="sc-n" style="color:var(--dim)">○ '+sp+'</div></div></div>';}).join('');
+  document.getElementById('misBody').innerHTML=mt.length?mt.map(function(t){var st=calcStatus(t);var spc={Done:'sp-done',Overdue:'sp-overdue',Pending:'sp-pending','Due Today':'sp-today'}[st]||'sp-pending';var delay=t.actualDate&&t.dueDate?daysDiff(t.dueDate,t.actualDate):null;var delayTxt=delay===null?'—':delay<=0?'<span style="color:var(--green)">On time</span>':'<span style="color:var(--red)">+'+delay+'d</span>';return'<tr onclick="openTask(\''+t.id+'\')"><td>'+secTag(t.section)+'</td><td style="font-size:11px;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escH(t.name)+'</td><td style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--sub)">'+fmtDate(t.dueDate)+'</td><td style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--green)">'+fmtDate(t.actualDate)+'</td><td style="font-size:11px">'+delayTxt+'</td><td><span class="status-pill '+spc+'">'+( st==='Done'?'✓ ':st==='Overdue'?'⚠ ':'○ ')+st+'</span></td><td style="font-size:10px;color:var(--dim)">'+escH(t.assign||'—')+'</td></tr>';}).join(''):'<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--dim)">No tasks for this period</td></tr>';}
+
+function openTask(id){viewingTaskId=id;var t=tasks.find(function(x){return x.id===id;});if(!t)return;var st=calcStatus(t);var spc={Done:'sp-done',Overdue:'sp-overdue',Pending:'sp-pending','Due Today':'sp-today'}[st]||'sp-pending';document.getElementById('taskMoTitle').innerHTML=escH(t.section)+' <span>Task Detail</span>';var assigneeEmail=getMemberEmail(t.assign);document.getElementById('taskDetailGrid').innerHTML=[{l:'Category',v:secTag(t.section)},{l:'Status',v:'<span class="status-pill '+spc+'">'+st+'</span>'},{l:'Due Date',v:fmtDate(t.dueDate)+(isHoliday(t.dueDate)?' 🏖':'')+(isSunday(t.dueDate)?' 🚫':'')},{l:'Frequency',v:'<span class="freq-badge '+freqBadge(t.freq)+'">'+t.freq+'</span>'},{l:'Month',v:ymLabel(t.monthKey)},{l:'Task',v:'<div style="font-size:12px;font-weight:600">'+escH(t.name)+'</div>'},{l:'Assignee Email',v:'<span style="font-size:10px;color:var(--teal)">'+escH(assigneeEmail||'—')+'</span>'},{l:'Assigned To',v:escH(t.assign||'—')},].map(function(item){return'<div class="tdg-item"><div class="tdg-lbl">'+item.l+'</div><div class="tdg-val">'+item.v+'</div></div>';}).join('');document.getElementById('taskNotes').value=t.notes||'';document.getElementById('taskProofLink').value=t.proofLink||'';document.getElementById('taskActualDate').value=t.actualDate||today();var proofView=document.getElementById('proofLinkView');if(t.proofLink){if(isAdmin()){proofView.innerHTML='<div class="proof-link-view"><span style="font-size:10px;color:var(--dim)">🔗</span><a href="'+escH(t.proofLink)+'" target="_blank" rel="noopener noreferrer">'+escH(t.proofLink)+'</a></div>';proofView.style.display='block';}else{proofView.innerHTML='<div style="font-size:11px;color:var(--dim);padding:8px">Proof link available (Owner can view)</div>';proofView.style.display='block';}}else{proofView.style.display='none';}populateAssignDropdowns();document.getElementById('taskAssign').value=t.assign||'';var isRO=isRO();var isOwner=(isAdmin());document.getElementById('taskNotes').disabled=isRO;document.getElementById('taskProofLink').disabled=isRO;document.getElementById('taskActualDate').disabled=isRO;document.getElementById('taskAssign').disabled=isRO;document.getElementById('markDoneBtn').style.display=isRO?'none':'';document.getElementById('markPendingBtn').style.display=isRO?'none':'';document.getElementById('deleteTaskBtn').style.display=isOwner?'':(isRO||!t.isCustom)?'none':'';openMo('taskMo');}
+function saveTaskFromModal(status){var t=tasks.find(function(x){return x.id===viewingTaskId;});if(!t)return;t.notes=document.getElementById('taskNotes').value;t.proofLink=document.getElementById('taskProofLink').value;t.assign=document.getElementById('taskAssign').value;if(status==='Done'){t.actualDate=document.getElementById('taskActualDate').value||today();t.status='Done';}else{t.actualDate='';t.status='Pending';}tasks=tasks.map(function(x){return x.id===viewingTaskId?t:x;});saveTask(t,function(){buildAll();showToast(status==='Done'?'✓ Task marked Done!':'Task marked Pending','s');closeMo('taskMo');});}
+function deleteTaskFromModal(){if(!confirm('Delete this task?'))return;deleteTask_db(viewingTaskId,function(){tasks=tasks.filter(function(t){return t.id!==viewingTaskId;});buildAll();closeMo('taskMo');showToast('Task deleted','e');});}
+
+function generateRecurringTasks(baseTask){var freq=baseTask.freq;var baseDue=new Date(baseTask.dueDate);var newTasks=[];if(freq==='Daily'){var currentDate=new Date(baseDue);var endDate=new Date(baseDue);endDate.setMonth(endDate.getMonth()+12);while(currentDate<=endDate){var dateStr=currentDate.toISOString().split('T')[0];if(isWorkingDay(dateStr)){var ym=dateStr.substring(0,7);newTasks.push({id:genId(),section:baseTask.section,name:baseTask.name,freq:'Daily',dueDate:dateStr,actualDate:'',status:'Pending',assign:baseTask.assign,notes:baseTask.notes,monthKey:ym,isCustom:true,proofLink:''});}currentDate.setDate(currentDate.getDate()+1);}}else if(freq==='Weekly'){for(var i=0;i<52;i++){var futureDate=new Date(baseDue);futureDate.setDate(futureDate.getDate()+(i*7));var dueDateStr=toWorkingDay(futureDate.toISOString().split('T')[0]);newTasks.push({id:genId(),section:baseTask.section,name:baseTask.name,freq:'Weekly',dueDate:dueDateStr,actualDate:'',status:'Pending',assign:baseTask.assign,notes:baseTask.notes,monthKey:dueDateStr.substring(0,7),isCustom:true,proofLink:'',});}}else if(freq==='Monthly'){for(var i=0;i<12;i++){var futureDate=new Date(baseDue.getFullYear(),baseDue.getMonth()+i,baseDue.getDate());var maxDay=new Date(futureDate.getFullYear(),futureDate.getMonth()+1,0).getDate();if(baseDue.getDate()>maxDay)futureDate.setDate(maxDay);var dueDateStr=toWorkingDay(futureDate.toISOString().split('T')[0]);newTasks.push({id:genId(),section:baseTask.section,name:baseTask.name,freq:'Monthly',dueDate:dueDateStr,actualDate:'',status:'Pending',assign:baseTask.assign,notes:baseTask.notes,monthKey:dueDateStr.substring(0,7),isCustom:true,proofLink:'',});}}else if(freq==='Quarterly'){for(var i=0;i<4;i++){var futureDate=new Date(baseDue.getFullYear(),baseDue.getMonth()+(i*3),baseDue.getDate());var maxDay=new Date(futureDate.getFullYear(),futureDate.getMonth()+1,0).getDate();if(baseDue.getDate()>maxDay)futureDate.setDate(maxDay);var dueDateStr=toWorkingDay(futureDate.toISOString().split('T')[0]);newTasks.push({id:genId(),section:baseTask.section,name:baseTask.name,freq:'Quarterly',dueDate:dueDateStr,actualDate:'',status:'Pending',assign:baseTask.assign,notes:baseTask.notes,monthKey:dueDateStr.substring(0,7),isCustom:true,proofLink:'',});}}else if(freq==='Annual'){for(var i=0;i<3;i++){var futureDate=new Date(baseDue.getFullYear()+i,baseDue.getMonth(),baseDue.getDate());var maxDay=new Date(futureDate.getFullYear(),futureDate.getMonth()+1,0).getDate();if(baseDue.getDate()>maxDay)futureDate.setDate(maxDay);var dueDateStr=toWorkingDay(futureDate.toISOString().split('T')[0]);newTasks.push({id:genId(),section:baseTask.section,name:baseTask.name,freq:'Annual',dueDate:dueDateStr,actualDate:'',status:'Pending',assign:baseTask.assign,notes:baseTask.notes,monthKey:dueDateStr.substring(0,7),isCustom:true,proofLink:'',});}}return newTasks;}
+
+function openAddTask(){if(isRO()){showToast('View only','e');return;}populateAssignDropdowns();document.getElementById('at-name').value='';document.getElementById('at-notes').value='';document.getElementById('at-due').value=today();document.getElementById('at-assign').value='';document.getElementById('at-freq').value='Monthly';updateRecurringNote();openMo('addTaskMo');}
+function updateRecurringNote(){var freq=document.getElementById('at-freq').value;var note=document.getElementById('recurringNote');var text=document.getElementById('recurringText');if(freq==='One-time'){note.style.display='none';}else{note.style.display='block';var messages={'Daily':'ℹ️ Tasks for all working days for 12 months from selected date','Weekly':'ℹ️ 52 weekly tasks from selected date','Monthly':'ℹ️ 12 monthly tasks from selected date','Quarterly':'ℹ️ 4 quarterly tasks from selected date','Annual':'ℹ️ 3 annual tasks from selected date'};text.textContent=messages[freq]||'';}}
+function saveAddTask(){var name=document.getElementById('at-name').value.trim();var due=document.getElementById('at-due').value;var freq=document.getElementById('at-freq').value;if(!name||!due){showToast('Name and Due Date required','e');return;}var adjustedDue=toWorkingDay(due);var ym=adjustedDue.substring(0,7);var baseTask={id:genId(),section:document.getElementById('at-section').value,name:name,freq:freq,dueDate:adjustedDue,actualDate:'',status:'Pending',assign:document.getElementById('at-assign').value,notes:document.getElementById('at-notes').value,monthKey:ym,isCustom:true,proofLink:''};if(freq==='One-time'){tasks.push(baseTask);saveTask(baseTask,function(){buildAll();showToast('✓ Task added!','s');if(SETTINGS.emailNew&&baseTask.assign)emailNewTaskAssigned(baseTask);});}else{var recurring=generateRecurringTasks(baseTask);if(recurring.length===0){showToast('No tasks generated','e');return;}setSS('saving','Creating '+recurring.length+' tasks...');recurring.forEach(function(t){tasks.push(t);});var promises=recurring.map(function(t){return new Promise(function(resolve){saveTask(t,function(){resolve();});});});Promise.all(promises).then(function(){buildAll();showToast('✓ '+recurring.length+' tasks created!','s');closeMo('addTaskMo');});}closeMo('addTaskMo');}
+
+var selRole=null;
+function pickRole(r,el){document.querySelectorAll('.l-role-btn').forEach(function(b){b.classList.remove('sel');});el.classList.add('sel');selRole=r;document.getElementById('passInput').focus();document.getElementById('lErr').textContent='';}
+function doLogin(){if(!selRole){document.getElementById('lErr').textContent='Please select your role';return;}var pass=document.getElementById('passInput').value.trim();if(!pass){document.getElementById('lErr').textContent='Please enter password';return;}var btn=document.getElementById('enterBtn');btn.textContent='Verifying...';btn.style.opacity='.7';setTimeout(function(){var pw=SETTINGS.passwords[selRole]||DEFAULT_SETTINGS.passwords[selRole];if(pass===pw){currentRole=selRole;sessionStorage.setItem('taskfms_role',selRole);btn.textContent='✓ Access Granted';btn.style.color='var(--green)';setTimeout(enterApp,500);}else{btn.textContent='ENTER SYSTEM →';btn.style.opacity='1';btn.style='';document.getElementById('lErr').textContent='Incorrect password';document.getElementById('passInput').value='';}},600);}
+function doLogout(){sessionStorage.removeItem('taskfms_role');currentRole=null;document.getElementById('appPage').classList.remove('active');document.getElementById('loginPage').classList.add('active');document.getElementById('passInput').value='';document.querySelectorAll('.l-role-btn').forEach(function(b){b.classList.remove('sel');});selRole=null;document.getElementById('enterBtn').textContent='ENTER SYSTEM →';document.getElementById('enterBtn').style='';}
+function enterApp(){document.getElementById('loginPage').classList.remove('active');document.getElementById('appPage').classList.add('active');document.getElementById('rolePill').textContent=roleLabel(currentRole);var _ro=isRO();document.getElementById('addTaskBtn').style.display=_ro?'none':'';document.getElementById('addRowBtn').style.display=_ro?'none':'';document.getElementById('settingsBtn').style.display=isAdmin()?'':'none';applyBrand();renderCatFilters();populateCatSelects();populateMonthSelects();populateAssignDropdowns();loadData();}
+function showView(v){document.querySelectorAll('.view').forEach(function(e){e.classList.remove('active');});document.querySelectorAll('.tb-ni').forEach(function(e){e.classList.remove('active');});document.getElementById('view-'+v).classList.add('active');document.getElementById('nav-'+v).classList.add('active');buildAll();}
+function openMo(id){document.getElementById(id).classList.add('open');}
+function closeMo(id){document.getElementById(id).classList.remove('open');}
+function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast '+(type||'s')+' show';setTimeout(function(){t.classList.remove('show');},3200);}
+
+window.onload=function(){
+  SETTINGS=loadSettings();applyDb();applyTheme(SETTINGS.theme);applyBrand();renderLoginRoles();renderCatFilters();populateCatSelects();
+  ['loginThemeBtn','appThemeBtn'].forEach(function(id){var el=document.getElementById(id);if(el)el.addEventListener('click',function(){toggleTheme();});});
+  document.getElementById('saveTeamBtn').addEventListener('click',function(){SETTINGS.teamMembers=getTeamFromInputs();SETTINGS.ownerEmail=document.getElementById('sp-owner-email').value.trim();saveSettings(SETTINGS);populateAssignDropdowns();showToast('✓ Team saved!','s');});
+  document.getElementById('saveEmailBtn').addEventListener('click',function(){SETTINGS.resendKey=document.getElementById('sp-resend-key').value.trim();SETTINGS.senderEmail=document.getElementById('sp-sender-email').value.trim();SETTINGS.reminderTime=document.getElementById('sp-reminder-time').value;SETTINGS.emailDaily=document.getElementById('sp-email-daily').checked;SETTINGS.emailNew=document.getElementById('sp-email-new').checked;SETTINGS.emailOverdue=document.getElementById('sp-email-overdue').checked;saveSettings(SETTINGS);showToast('✓ Email settings saved!','s');});
+  document.getElementById('testEmailBtn').addEventListener('click',function(){var key=SETTINGS.resendKey;if(!key){showToast('Please save API key first','e');return;}var ownerEmail=SETTINGS.ownerEmail;if(!ownerEmail){showToast('No owner email configured','e');return;}var html=buildEmailTemplate('Test Email ✓','Email notifications are working.',[{label:'System',value:brandFull()},{label:'Status',value:'Active ✓'},{label:'Time',value:new Date().toLocaleString()}],'No action required.','#00BFA5');sendEmail(ownerEmail,'','Test Email — '+brandFull(),html).then(function(r){if(r&&r.id)showToast('✓ Test email sent!','s');else showToast('Check API key','e');});});
+  document.getElementById('saveHolidaysBtn').addEventListener('click',function(){saveSettings(SETTINGS);showToast('✓ Holidays saved!','s');});
+  document.getElementById('clearHolidaysBtn').addEventListener('click',function(){if(confirm('Clear all holidays?')){SETTINGS.holidays=[];renderHolidayList();saveSettings(SETTINGS);showToast('Holidays cleared','i');}});
+  document.getElementById('saveBrandBtn').addEventListener('click',saveBrand);
+  document.getElementById('saveRolesBtn').addEventListener('click',saveRoles);
+  document.getElementById('saveCatsBtn').addEventListener('click',saveCategories);
+  document.getElementById('saveWeekOffBtn').addEventListener('click',saveWeekOff);
+  document.getElementById('saveDbBtn').addEventListener('click',saveDb);
+  document.getElementById('testDbBtn').addEventListener('click',testDb);
+  document.getElementById('resetSettingsBtn').addEventListener('click',resetSettings);
+  document.getElementById('xlFile').addEventListener('change',function(e){var file=e.target.files[0];if(file)handleHolidayFile(file);this.value='';});
+  var dropZone=document.getElementById('xlDropZone');
+  dropZone.addEventListener('dragover',function(e){e.preventDefault();this.style.borderColor='var(--teal)';});
+  dropZone.addEventListener('dragleave',function(){this.style.borderColor='';});
+  dropZone.addEventListener('drop',function(e){e.preventDefault();this.style.borderColor='';var file=e.dataTransfer.files[0];if(file)handleHolidayFile(file);});
+  document.getElementById('at-freq').addEventListener('change',updateRecurringNote);
+  document.getElementById('settingsBtn').addEventListener('click',openSettings);
+  document.getElementById('settingsOverlay').addEventListener('click',function(e){if(e.target===this)closeSettings();});
+  document.getElementById('passInput').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+  document.getElementById('enterBtn').addEventListener('click',doLogin);
+  document.getElementById('passToggle').addEventListener('click',function(){var i=document.getElementById('passInput');i.type=i.type==='password'?'text':'password';});
+  document.getElementById('logoutBtn').addEventListener('click',doLogout);
+  document.getElementById('nav-dash').addEventListener('click',function(){showView('dash');});
+  document.getElementById('nav-tasks').addEventListener('click',function(){showView('tasks');});
+  document.getElementById('nav-mis').addEventListener('click',function(){showView('mis');});
+  document.getElementById('addTaskBtn').addEventListener('click',openAddTask);
+  document.getElementById('addRowBtn').addEventListener('click',openAddTask);
+  document.getElementById('markDoneBtn').addEventListener('click',function(){saveTaskFromModal('Done');});
+  document.getElementById('markPendingBtn').addEventListener('click',function(){saveTaskFromModal('Pending');});
+  document.getElementById('deleteTaskBtn').addEventListener('click',deleteTaskFromModal);
+  document.getElementById('saveAddTaskBtn').addEventListener('click',saveAddTask);
+  document.getElementById('taskFromDate').addEventListener('change',function(){buildTasksView(document.getElementById('taskMonthSel').value||getYM());});
+  document.getElementById('taskToDate').addEventListener('change',function(){buildTasksView(document.getElementById('taskMonthSel').value||getYM());});
+  document.getElementById('clearDateFilter').addEventListener('click',function(){document.getElementById('taskFromDate').value='';document.getElementById('taskToDate').value='';buildTasksView(document.getElementById('taskMonthSel').value||getYM());});
+  document.getElementById('misFromDate').addEventListener('change',function(){buildMIS(document.getElementById('misMonthSel').value||getYM());});
+  document.getElementById('misToDate').addEventListener('change',function(){buildMIS(document.getElementById('misMonthSel').value||getYM());});
+  document.getElementById('clearMisDateFilter').addEventListener('click',function(){document.getElementById('misFromDate').value='';document.getElementById('misToDate').value='';buildMIS(document.getElementById('misMonthSel').value||getYM());});
+  bindCatFilters();
+  document.getElementById('taskMonthSel').addEventListener('change',function(){
+  var selYM=this.value;
+  if(!loadedMonths[selYM]){loadMonth(selYM,function(){buildTasksView(selYM);});}
+  else{buildTasksView(selYM);}
+});
+  document.getElementById('misMonthSel').addEventListener('change',function(){buildMIS(this.value);});
+  document.getElementById('taskSrch').addEventListener('input',function(){buildTasksView(document.getElementById('taskMonthSel').value||getYM());});
+  document.querySelectorAll('.mo').forEach(function(o){o.addEventListener('click',function(e){if(e.target===o)o.classList.remove('open');});});
+  var saved=sessionStorage.getItem('taskfms_role');
+  if(saved&&SETTINGS.passwords[saved]){currentRole=saved;enterApp();}
+};
+</script>
+</body>
+</html>
