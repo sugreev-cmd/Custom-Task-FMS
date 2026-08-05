@@ -2,6 +2,8 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title id="pageTitle">Task FMS</title>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -255,6 +257,7 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif}
     <button class="l-btn" id="enterBtn">ENTER SYSTEM →</button>
     <div class="l-err" id="lErr"></div>
     <div class="l-foot" id="brandFoot">Task FMS · Confidential</div>
+    <div style="text-align:center;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--dim);margin-top:4px" id="buildTag">build AUTH-v2 · secured login</div>
   </div>
 </div>
 
@@ -1129,7 +1132,7 @@ function doLogin(){
     setTimeout(enterApp,400);
   }).catch(function(e){
     var m=String(e.message||'');
-    loginFail(/Invalid login|invalid_grant|credential/i.test(m)?'Incorrect password':('Login failed — '+m));
+    loginFail(/Invalid login|invalid_grant|credential/i.test(m)?('Galat password for '+email):('Login failed — '+m));
   });
 }
 function doLogout(){clearAuth();try{sessionStorage.removeItem('taskfms_role');}catch(e){}currentRole=null;document.getElementById('appPage').classList.remove('active');document.getElementById('loginPage').classList.add('active');document.getElementById('passInput').value='';document.querySelectorAll('.l-role-btn').forEach(function(b){b.classList.remove('sel');});selRole=null;document.getElementById('enterBtn').textContent='ENTER SYSTEM →';document.getElementById('enterBtn').style='';}
