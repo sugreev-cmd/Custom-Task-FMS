@@ -1175,7 +1175,7 @@ function applyRemoteSettingsToUI(){
 }
 function pullSettingsThen(cb){
   fetchRemoteSettings().then(function(r){
-    if(r){applyRemoteSettingsToUI();setSyncPill('Settings synced','saved');}
+    if(r){applyRemoteSettingsToUI();try{if((allTasks||[]).length)buildAll();}catch(e){}setSyncPill('Settings synced','saved');}
     else if(isAdmin()){
       // pehli baar: is browser ki settings ko server par bhej do
       sbFetch('/'+STABLE,'POST',{id:'main',data:sharedPayload(),admin_roles:adminRoles(),updated_by:currentRole})
