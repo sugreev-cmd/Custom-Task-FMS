@@ -331,6 +331,37 @@ html{-webkit-text-size-adjust:100%}
   .l-roles{grid-template-columns:1fr}
   .wo-days{grid-template-columns:repeat(4,1fr)}
 }
+
+/* PROOF PHOTOS (camera -> Drive) */
+.tf-cam-wrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0 10px}
+.tf-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 14px;border-radius:8px;cursor:pointer;
+  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;transition:.18s;
+  background:var(--s3);border:1px solid var(--bd2);color:var(--text)}
+.tf-btn:hover{border-color:var(--teal);color:var(--teal)}
+.tf-btn.cam{background:var(--teal2);border-color:rgba(0,191,165,.45);color:var(--teal)}
+.tf-btn.cam:hover{background:rgba(0,191,165,.22)}
+.tf-btn:disabled{opacity:.45;cursor:not-allowed}
+.tf-count{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--dim);margin-left:auto}
+.tf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px}
+.tf-ph{position:relative;border-radius:8px;overflow:hidden;background:var(--s3);border:1px solid var(--bd);
+  aspect-ratio:3/4}
+.tf-ph img{width:100%;height:100%;object-fit:cover;display:block}
+.tf-ph.up{opacity:.75}
+.tf-ph.bad{border-color:rgba(255,68,68,.6)}
+.tf-ov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.55);color:#fff;font-size:10px;font-weight:600;letter-spacing:.4px}
+.tf-ov.bad{background:rgba(160,20,20,.7)}
+.tf-cap{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.82));
+  color:#fff;font-size:8.5px;line-height:1.35;padding:12px 5px 4px;font-family:'JetBrains Mono',monospace}
+.tf-del{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;border:none;cursor:pointer;
+  background:rgba(0,0,0,.6);color:#fff;font-size:10px;line-height:1;display:flex;align-items:center;justify-content:center}
+.tf-del:hover{background:#DC2626}
+.tf-open{position:absolute;top:4px;left:4px;width:20px;height:20px;border-radius:50%;
+  background:rgba(0,0,0,.6);color:#fff;font-size:10px;text-decoration:none;display:flex;align-items:center;justify-content:center}
+.tf-open:hover{background:var(--teal);color:#08131c}
+.tf-empty{grid-column:1/-1;text-align:center;padding:16px 10px;color:var(--dim);font-size:11px;line-height:1.6}
+.tf-warn{background:rgba(255,184,0,.1);border:1px solid rgba(255,184,0,.35);color:#FFB800;border-radius:8px;
+  padding:9px 11px;font-size:11px;line-height:1.55;margin-bottom:8px}
 </style>
 </head>
 <body>
@@ -623,6 +654,8 @@ html{-webkit-text-size-adjust:100%}
       <div class="sp-label">Supabase URL</div><input class="sp-input" id="sp-db-url" placeholder="https://xxxx.supabase.co">
       <div class="sp-label">Supabase anon key</div><input class="sp-input" id="sp-db-key" type="password" placeholder="eyJ...">
       <div class="sp-label">Table Name</div><input class="sp-input" id="sp-db-table" placeholder="task_fms_tasks">
+      <div class="sp-label">Proof Upload Script URL <span style="color:var(--dim);text-transform:none;letter-spacing:0">- camera se photo Drive me bhejne ke liye</span></div>
+      <input class="sp-input" id="sp-proof-url" placeholder="https://script.google.com/macros/s/AKfy.../exec">
       <button class="sp-btn" id="saveDbBtn">💾 Save &amp; Reconnect</button>
       <button class="sp-btn-secondary" id="testDbBtn">🔌 Test Connection</button>
 
@@ -652,7 +685,18 @@ html{-webkit-text-size-adjust:100%}
       <div class="task-detail-grid" id="taskDetailGrid"></div>
       <div class="notes-box"><div class="notes-lbl">Notes / Remarks</div><textarea class="notes-inp" id="taskNotes" placeholder="Add notes here..."></textarea></div>
       <div class="proof-link-box" id="proofLinkBox">
-        <div class="proof-link-lbl">🔗 Proof Link (Optional)</div>
+        <div class="proof-link-lbl">📷 Proof Photos</div>
+        <div class="tf-warn" id="tfNoUrlWarn" style="display:none">Proof upload set nahi hai. Settings -> Data me
+          <b>Proof Upload Script URL</b> daal dijiye, phir camera chalu ho jayega.</div>
+        <div class="tf-cam-wrap" id="tfCamWrap">
+          <button type="button" class="tf-btn cam" id="tfCamBtn">📷 Take Photo</button>
+          <button type="button" class="tf-btn" id="tfGalBtn">🖼 Choose Photo</button>
+          <span class="tf-count" id="tfCount"></span>
+        </div>
+        <input type="file" id="tfCamInput" accept="image/*" capture="environment" style="display:none">
+        <input type="file" id="tfGalInput" accept="image/*" multiple style="display:none">
+        <div class="tf-grid" id="tfPhotoGrid"></div>
+        <div class="proof-link-lbl" style="margin-top:14px">🔗 Proof Link (manual, optional)</div>
         <input class="proof-link-inp" id="taskProofLink" placeholder="https://drive.google.com/..." type="url">
         <div id="proofLinkView" style="display:none"></div>
       </div>
@@ -1046,11 +1090,13 @@ function sqlText(){
     +'revoke all on public.'+t+' from anon;\n'
     +'grant select, insert, update, delete on public.'+t+' to authenticated;';
 }
-function renderDbInputs(){var d=SETTINGS.db||DEFAULT_SETTINGS.db;setVal('sp-db-url',d.url);setVal('sp-db-key',d.key);setVal('sp-db-table',d.table);var b=document.getElementById('sqlBox');if(b)b.value=sqlText();}
+function renderDbInputs(){var d=SETTINGS.db||DEFAULT_SETTINGS.db;setVal('sp-db-url',d.url);setVal('sp-db-key',d.key);setVal('sp-db-table',d.table);setVal('sp-proof-url',(SETTINGS&&SETTINGS.proofScriptUrl)||'');var b=document.getElementById('sqlBox');if(b)b.value=sqlText();}
 function saveDb(){
   SETTINGS.db={url:document.getElementById('sp-db-url').value.trim().replace(/\/$/,''),
                key:document.getElementById('sp-db-key').value.trim(),
                table:document.getElementById('sp-db-table').value.trim()||'task_fms_tasks'};
+  var _pu=document.getElementById('sp-proof-url');
+  SETTINGS.proofScriptUrl=_pu?_pu.value.trim():(SETTINGS.proofScriptUrl||'');
   saveSettings(SETTINGS);applyDb();renderDbInputs();
   loadedMonths={};allTasks=[];tasks=[];loadData();
   showToast('✓ Reconnected','s');
@@ -1074,7 +1120,7 @@ function resetSettings(){
    ====================================================== */
 function taskToRow(t){return {id:t.id,section:t.section,name:t.name,freq:t.freq,due_date:t.dueDate,
   actual_date:t.actualDate||null,status:t.status,assigned_to:t.assign||'',notes:t.notes||'',
-  month_key:t.monthKey,is_custom:!!t.isCustom,proof_link:t.proofLink||'',updated_at:new Date().toISOString()};}
+  month_key:t.monthKey,is_custom:!!t.isCustom,proof_link:t.proofLink||'',proof_photos:t.proofPhotos||[],updated_at:new Date().toISOString()};}
 function _h1(s){var h=5381;for(var i=0;i<s.length;i++){h=(((h<<5)+h)+s.charCodeAt(i))>>>0;}return h.toString(36);}
 function _h2(s){var h=0;for(var i=0;i<s.length;i++){h=(s.charCodeAt(i)+(h<<6)+(h<<16)-h)>>>0;}return h.toString(36);}
 function bulkId(sec,name,date){var k=sec+'|'+name+'|'+date;return 'B'+_h1(k)+'-'+_h2(k);}
@@ -1398,8 +1444,8 @@ function loadData(){
     })
     .catch(function(e){ setSS('err','Load failed'); console.error(e); showToast('Load failed — check Supabase','e'); });
 }
-function mapRow(r){return{id:r.id,section:r.section||'',name:r.name||'',freq:r.freq||'Monthly',dueDate:r.due_date||'',actualDate:r.actual_date||'',status:r.status||'Pending',assign:r.assigned_to||'',notes:r.notes||'',monthKey:r.month_key||'',isCustom:r.is_custom||false,proofLink:r.proof_link||''};}
-function saveTask(task,cb){setSS('saving','Saving...');var row={id:task.id,section:task.section,name:task.name,freq:task.freq,due_date:task.dueDate,actual_date:task.actualDate||null,status:task.status,assigned_to:task.assign||'',notes:task.notes||'',month_key:task.monthKey,is_custom:task.isCustom||false,proof_link:task.proofLink||'',updated_at:new Date().toISOString()};sbFetch('/'+TABLE+'?on_conflict=id','POST',row).then(function(){setSS('saved','✓ Saved');if(cb)cb();}).catch(function(){sbFetch('/'+TABLE+'?id=eq.'+task.id,'PATCH',row).then(function(){setSS('saved','✓ Saved');if(cb)cb();}).catch(function(e){setSS('err','Save failed');showToast('Save failed','e');console.error(e);});});}
+function mapRow(r){return{id:r.id,section:r.section||'',name:r.name||'',freq:r.freq||'Monthly',dueDate:r.due_date||'',actualDate:r.actual_date||'',status:r.status||'Pending',assign:r.assigned_to||'',notes:r.notes||'',monthKey:r.month_key||'',isCustom:r.is_custom||false,proofLink:r.proof_link||'',proofPhotos:Array.isArray(r.proof_photos)?r.proof_photos:[]};}
+function saveTask(task,cb){setSS('saving','Saving...');var row={id:task.id,section:task.section,name:task.name,freq:task.freq,due_date:task.dueDate,actual_date:task.actualDate||null,status:task.status,assigned_to:task.assign||'',notes:task.notes||'',month_key:task.monthKey,is_custom:task.isCustom||false,proof_link:task.proofLink||'',proof_photos:task.proofPhotos||[],updated_at:new Date().toISOString()};sbFetch('/'+TABLE+'?on_conflict=id','POST',row).then(function(){setSS('saved','✓ Saved');if(cb)cb();}).catch(function(){sbFetch('/'+TABLE+'?id=eq.'+task.id,'PATCH',row).then(function(){setSS('saved','✓ Saved');if(cb)cb();}).catch(function(e){setSS('err','Save failed');showToast('Save failed','e');console.error(e);});});}
 function deleteTask_db(id,cb){sbFetch('/'+TABLE+'?id=eq.'+id,'DELETE').then(function(){setSS('saved','✓ Saved');if(cb)cb();}).catch(function(){setSS('err','Error');showToast('Delete failed','e');});}
 function calcStatus(task){if(task.actualDate)return'Done';if(task.dueDate<today())return'Overdue';if(task.dueDate===today())return'Due Today';return'Pending';}
 
@@ -1476,8 +1522,8 @@ function buildMIS(ym){
   document.getElementById('misSectionChart').innerHTML='<div class="sc-hdr">'+ymLabel(ym)+' — Category Performance</div>'+secs.map(function(sec){var st=mt.filter(function(t){return t.section===sec;});var sd=st.filter(function(t){return t.actualDate;}).length;var so=st.filter(function(t){return calcStatus(t)==='Overdue';}).length;var sp=st.length-sd-so;var pct2=st.length>0?Math.round(sd/st.length*100):0;return'<div class="sc-row"><div class="sc-lbl">'+sec+' ('+st.length+')</div><div class="sc-bar"><div class="sc-fill" style="width:'+Math.max(pct2,sd>0?5:0)+'%;background:'+sColors2[sec]+'">'+( pct2>15?pct2+'%':'')+'</div></div><div class="sc-nums"><div class="sc-n" style="color:var(--green)">✓ '+sd+'</div><div class="sc-n" style="color:var(--red)">⚠ '+so+'</div><div class="sc-n" style="color:var(--dim)">○ '+sp+'</div></div></div>';}).join('');
   document.getElementById('misBody').innerHTML=mt.length?mt.map(function(t){var st=calcStatus(t);var spc={Done:'sp-done',Overdue:'sp-overdue',Pending:'sp-pending','Due Today':'sp-today'}[st]||'sp-pending';var delay=t.actualDate&&t.dueDate?daysDiff(t.dueDate,t.actualDate):null;var delayTxt=delay===null?'—':delay<=0?'<span style="color:var(--green)">On time</span>':'<span style="color:var(--red)">+'+delay+'d</span>';return'<tr onclick="openTask(\''+t.id+'\')"><td>'+secTag(t.section)+'</td><td style="font-size:11px;max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escH(t.name)+'</td><td style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--sub)">'+fmtDate(t.dueDate)+'</td><td style="font-family:JetBrains Mono,monospace;font-size:10px;color:var(--green)">'+fmtDate(t.actualDate)+'</td><td style="font-size:11px">'+delayTxt+'</td><td><span class="status-pill '+spc+'">'+( st==='Done'?'✓ ':st==='Overdue'?'⚠ ':'○ ')+st+'</span></td><td style="font-size:10px;color:var(--dim)">'+escH(t.assign||'—')+'</td></tr>';}).join(''):'<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--dim)">No tasks for this period</td></tr>';}
 
-function openTask(id){viewingTaskId=id;var t=tasks.find(function(x){return x.id===id;});if(!t)return;var st=calcStatus(t);var spc={Done:'sp-done',Overdue:'sp-overdue',Pending:'sp-pending','Due Today':'sp-today'}[st]||'sp-pending';document.getElementById('taskMoTitle').innerHTML=escH(t.section)+' <span>Task Detail</span>';var assigneeEmail=getMemberEmail(t.assign);document.getElementById('taskDetailGrid').innerHTML=[{l:'Category',v:secTag(t.section)},{l:'Status',v:'<span class="status-pill '+spc+'">'+st+'</span>'},{l:'Due Date',v:fmtDate(t.dueDate)+(isHoliday(t.dueDate)?' 🏖':'')+(isSunday(t.dueDate)?' 🚫':'')},{l:'Frequency',v:'<span class="freq-badge '+freqBadge(t.freq)+'">'+t.freq+'</span>'},{l:'Month',v:ymLabel(t.monthKey)},{l:'Task',v:'<div style="font-size:12px;font-weight:600">'+escH(t.name)+'</div>'},{l:'Assignee Email',v:'<span style="font-size:10px;color:var(--teal)">'+escH(assigneeEmail||'—')+'</span>'},{l:'Assigned To',v:escH(t.assign||'—')},].map(function(item){return'<div class="tdg-item"><div class="tdg-lbl">'+item.l+'</div><div class="tdg-val">'+item.v+'</div></div>';}).join('');document.getElementById('taskNotes').value=t.notes||'';document.getElementById('taskProofLink').value=t.proofLink||'';document.getElementById('taskActualDate').value=t.actualDate||today();var proofView=document.getElementById('proofLinkView');if(t.proofLink){if(isAdmin()){proofView.innerHTML='<div class="proof-link-view"><span style="font-size:10px;color:var(--dim)">🔗</span><a href="'+escH(t.proofLink)+'" target="_blank" rel="noopener noreferrer">'+escH(t.proofLink)+'</a></div>';proofView.style.display='block';}else{proofView.innerHTML='<div style="font-size:11px;color:var(--dim);padding:8px">Proof link available (Owner can view)</div>';proofView.style.display='block';}}else{proofView.style.display='none';}populateAssignDropdowns();document.getElementById('taskAssign').value=t.assign||'';var _ro=isRO();var _admin=isAdmin();document.getElementById('taskNotes').disabled=_ro;document.getElementById('taskProofLink').disabled=_ro;document.getElementById('taskActualDate').disabled=_ro;document.getElementById('taskAssign').disabled=_ro;document.getElementById('markDoneBtn').style.display=_ro?'none':'';document.getElementById('markPendingBtn').style.display=_ro?'none':'';document.getElementById('deleteTaskBtn').style.display=_admin?'':(_ro||!t.isCustom)?'none':'';openMo('taskMo');}
-function saveTaskFromModal(status){var t=tasks.find(function(x){return x.id===viewingTaskId;});if(!t)return;t.notes=document.getElementById('taskNotes').value;t.proofLink=document.getElementById('taskProofLink').value;t.assign=document.getElementById('taskAssign').value;if(status==='Done'){t.actualDate=document.getElementById('taskActualDate').value||today();t.status='Done';}else{t.actualDate='';t.status='Pending';}tasks=tasks.map(function(x){return x.id===viewingTaskId?t:x;});saveTask(t,function(){buildAll();showToast(status==='Done'?'✓ Task marked Done!':'Task marked Pending','s');closeMo('taskMo');});}
+function openTask(id){viewingTaskId=id;var t=tasks.find(function(x){return x.id===id;});if(!t)return;var st=calcStatus(t);var spc={Done:'sp-done',Overdue:'sp-overdue',Pending:'sp-pending','Due Today':'sp-today'}[st]||'sp-pending';document.getElementById('taskMoTitle').innerHTML=escH(t.section)+' <span>Task Detail</span>';var assigneeEmail=getMemberEmail(t.assign);document.getElementById('taskDetailGrid').innerHTML=[{l:'Category',v:secTag(t.section)},{l:'Status',v:'<span class="status-pill '+spc+'">'+st+'</span>'},{l:'Due Date',v:fmtDate(t.dueDate)+(isHoliday(t.dueDate)?' 🏖':'')+(isSunday(t.dueDate)?' 🚫':'')},{l:'Frequency',v:'<span class="freq-badge '+freqBadge(t.freq)+'">'+t.freq+'</span>'},{l:'Month',v:ymLabel(t.monthKey)},{l:'Task',v:'<div style="font-size:12px;font-weight:600">'+escH(t.name)+'</div>'},{l:'Assignee Email',v:'<span style="font-size:10px;color:var(--teal)">'+escH(assigneeEmail||'—')+'</span>'},{l:'Assigned To',v:escH(t.assign||'—')},].map(function(item){return'<div class="tdg-item"><div class="tdg-lbl">'+item.l+'</div><div class="tdg-val">'+item.v+'</div></div>';}).join('');document.getElementById('taskNotes').value=t.notes||'';document.getElementById('taskProofLink').value=t.proofLink||'';tfLoadPhotos(t);document.getElementById('taskActualDate').value=t.actualDate||today();var proofView=document.getElementById('proofLinkView');if(t.proofLink){if(isAdmin()){proofView.innerHTML='<div class="proof-link-view"><span style="font-size:10px;color:var(--dim)">🔗</span><a href="'+escH(t.proofLink)+'" target="_blank" rel="noopener noreferrer">'+escH(t.proofLink)+'</a></div>';proofView.style.display='block';}else{proofView.innerHTML='<div style="font-size:11px;color:var(--dim);padding:8px">Proof link available (Owner can view)</div>';proofView.style.display='block';}}else{proofView.style.display='none';}populateAssignDropdowns();document.getElementById('taskAssign').value=t.assign||'';var _ro=isRO();var _admin=isAdmin();document.getElementById('taskNotes').disabled=_ro;document.getElementById('taskProofLink').disabled=_ro;tfSetReadOnly(_ro);document.getElementById('taskActualDate').disabled=_ro;document.getElementById('taskAssign').disabled=_ro;document.getElementById('markDoneBtn').style.display=_ro?'none':'';document.getElementById('markPendingBtn').style.display=_ro?'none':'';document.getElementById('deleteTaskBtn').style.display=_admin?'':(_ro||!t.isCustom)?'none':'';openMo('taskMo');}
+function saveTaskFromModal(status){var t=tasks.find(function(x){return x.id===viewingTaskId;});if(!t)return;t.notes=document.getElementById('taskNotes').value;t.proofLink=document.getElementById('taskProofLink').value;t.proofPhotos=tfCleanPhotos();if(!t.proofLink&&t.proofPhotos.length)t.proofLink=t.proofPhotos[0].viewUrl||'';t.assign=document.getElementById('taskAssign').value;if(status==='Done'){t.actualDate=document.getElementById('taskActualDate').value||today();t.status='Done';}else{t.actualDate='';t.status='Pending';}tasks=tasks.map(function(x){return x.id===viewingTaskId?t:x;});saveTask(t,function(){buildAll();showToast(status==='Done'?'✓ Task marked Done!':'Task marked Pending','s');closeMo('taskMo');});}
 function deleteTaskFromModal(){if(!confirm('Delete this task?'))return;deleteTask_db(viewingTaskId,function(){tasks=tasks.filter(function(t){return t.id!==viewingTaskId;});buildAll();closeMo('taskMo');showToast('Task deleted','e');});}
 
 function generateRecurringTasks(baseTask){var freq=baseTask.freq;var baseDue=new Date(baseTask.dueDate);var newTasks=[];if(freq==='Daily'){var currentDate=new Date(baseDue);var endDate=new Date(baseDue);endDate.setMonth(endDate.getMonth()+12);while(currentDate<=endDate){var dateStr=currentDate.toISOString().split('T')[0];if(isWorkingDay(dateStr)){var ym=dateStr.substring(0,7);newTasks.push({id:genId(),section:baseTask.section,name:baseTask.name,freq:'Daily',dueDate:dateStr,actualDate:'',status:'Pending',assign:baseTask.assign,notes:baseTask.notes,monthKey:ym,isCustom:true,proofLink:''});}currentDate.setDate(currentDate.getDate()+1);}}else if(freq==='Weekly'){for(var i=0;i<52;i++){var futureDate=new Date(baseDue);futureDate.setDate(futureDate.getDate()+(i*7));var dueDateStr=toWorkingDay(futureDate.toISOString().split('T')[0]);newTasks.push({id:genId(),section:baseTask.section,name:baseTask.name,freq:'Weekly',dueDate:dueDateStr,actualDate:'',status:'Pending',assign:baseTask.assign,notes:baseTask.notes,monthKey:dueDateStr.substring(0,7),isCustom:true,proofLink:'',});}}else if(freq==='Monthly'){for(var i=0;i<12;i++){var futureDate=new Date(baseDue.getFullYear(),baseDue.getMonth()+i,baseDue.getDate());var maxDay=new Date(futureDate.getFullYear(),futureDate.getMonth()+1,0).getDate();if(baseDue.getDate()>maxDay)futureDate.setDate(maxDay);var dueDateStr=toWorkingDay(futureDate.toISOString().split('T')[0]);newTasks.push({id:genId(),section:baseTask.section,name:baseTask.name,freq:'Monthly',dueDate:dueDateStr,actualDate:'',status:'Pending',assign:baseTask.assign,notes:baseTask.notes,monthKey:dueDateStr.substring(0,7),isCustom:true,proofLink:'',});}}else if(freq==='Quarterly'){for(var i=0;i<4;i++){var futureDate=new Date(baseDue.getFullYear(),baseDue.getMonth()+(i*3),baseDue.getDate());var maxDay=new Date(futureDate.getFullYear(),futureDate.getMonth()+1,0).getDate();if(baseDue.getDate()>maxDay)futureDate.setDate(maxDay);var dueDateStr=toWorkingDay(futureDate.toISOString().split('T')[0]);newTasks.push({id:genId(),section:baseTask.section,name:baseTask.name,freq:'Quarterly',dueDate:dueDateStr,actualDate:'',status:'Pending',assign:baseTask.assign,notes:baseTask.notes,monthKey:dueDateStr.substring(0,7),isCustom:true,proofLink:'',});}}else if(freq==='Annual'){for(var i=0;i<3;i++){var futureDate=new Date(baseDue.getFullYear()+i,baseDue.getMonth(),baseDue.getDate());var maxDay=new Date(futureDate.getFullYear(),futureDate.getMonth()+1,0).getDate();if(baseDue.getDate()>maxDay)futureDate.setDate(maxDay);var dueDateStr=toWorkingDay(futureDate.toISOString().split('T')[0]);newTasks.push({id:genId(),section:baseTask.section,name:baseTask.name,freq:'Annual',dueDate:dueDateStr,actualDate:'',status:'Pending',assign:baseTask.assign,notes:baseTask.notes,monthKey:dueDateStr.substring(0,7),isCustom:true,proofLink:'',});}}return newTasks;}
@@ -1577,6 +1623,254 @@ window.onload=function(){
     refreshSession().then(function(){enterApp();},function(){clearAuth();currentRole=null;});
   }
 };
+
+/* ==============================================================
+   PROOF PHOTOS  -  camera -> stamp -> Google Drive -> link saved
+   Upload endpoint: Apps Script web app (Settings -> Data)
+   ============================================================== */
+
+var tfPhotos = [];                 // photos of the task currently open
+var TF_MAX_SIDE = 1400;            // px - long edge after resize
+var TF_QUALITY  = 0.82;            // jpeg quality
+var TF_TIMEOUT  = 60000;           // ms
+
+function tfScriptUrl(){
+  var u = (typeof SETTINGS === 'object' && SETTINGS) ? (SETTINGS.proofScriptUrl || '') : '';
+  return String(u).trim();
+}
+
+function tfLoadPhotos(t){
+  tfPhotos = (t && Array.isArray(t.proofPhotos)) ? t.proofPhotos.slice() : [];
+  var warn = document.getElementById('tfNoUrlWarn');
+  var wrap = document.getElementById('tfCamWrap');
+  var has  = !!tfScriptUrl();
+  if(warn) warn.style.display = has ? 'none' : 'block';
+  if(wrap) wrap.style.opacity = has ? '1' : '.5';
+  tfRenderPhotos();
+}
+
+function tfSetReadOnly(ro){
+  var wrap = document.getElementById('tfCamWrap');
+  if(wrap) wrap.style.display = ro ? 'none' : 'flex';
+  tfRenderPhotos();
+}
+
+function tfCleanPhotos(){
+  return tfPhotos.filter(function(p){ return p && p.viewUrl; }).map(function(p){
+    return { fileId:p.fileId||'', viewUrl:p.viewUrl, thumbnailUrl:p.thumbnailUrl||'',
+             at:p.at||'', by:p.by||'' };
+  });
+}
+
+function tfRenderPhotos(){
+  var g = document.getElementById('tfPhotoGrid');
+  if(!g) return;
+  var ro = (typeof isRO === 'function') ? isRO() : false;
+  var cnt = document.getElementById('tfCount');
+  var okN = tfPhotos.filter(function(p){ return p && p.viewUrl; }).length;
+  if(cnt) cnt.textContent = tfPhotos.length ? (okN + ' photo' + (okN===1?'':'s')) : '';
+
+  if(!tfPhotos.length){
+    g.innerHTML = '<div class="tf-empty">' +
+      (ro ? 'Koi proof photo nahi lagi.' :
+            'Koi photo nahi lagi.<br><b>Take Photo</b> dabaiye - camera khulega, photo apne aap Drive me chali jayegi.') +
+      '</div>';
+    return;
+  }
+
+  g.innerHTML = tfPhotos.map(function(p,i){
+    var src = p.thumbnailUrl || p.local || '';
+    var h = '<div class="tf-ph'+(p.uploading?' up':'')+(p.failed?' bad':'')+'">';
+    h += src ? '<img src="'+escH(src)+'" loading="lazy" onerror="this.style.opacity=.2">' : '';
+    if(p.uploading) h += '<div class="tf-ov">Uploading...</div>';
+    else if(p.failed) h += '<div class="tf-ov bad">Failed</div>';
+    if(p.viewUrl) h += '<a class="tf-open" href="'+escH(p.viewUrl)+'" target="_blank" rel="noopener" title="Open in Drive" onclick="event.stopPropagation()">↗</a>';
+    if(!ro) h += '<button type="button" class="tf-del" title="Remove" onclick="tfRemovePhoto('+i+')">✕</button>';
+    h += '<div class="tf-cap">'+escH(p.at||'')+(p.by?'<br>'+escH(p.by):'')+'</div>';
+    h += '</div>';
+    return h;
+  }).join('');
+}
+
+function tfRemovePhoto(i){
+  var p = tfPhotos[i];
+  if(!p) return;
+  if(p.uploading){ showToast('Ye photo abhi upload ho rahi hai','e'); return; }
+  if(!confirm('Ye photo list se hata dein?\n\n(Drive me file rahegi, sirf task se hatt jayegi.)')) return;
+  tfPhotos.splice(i,1);
+  tfRenderPhotos();
+}
+
+/* date / time of capture */
+function tfFmtDT(d){
+  var M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var hh=d.getHours(), ap=hh>=12?'PM':'AM', h12=hh%12; if(h12===0)h12=12;
+  return d.getDate()+' '+M[d.getMonth()]+' '+d.getFullYear()+',  '+
+         (h12<10?'0':'')+h12+':'+String(d.getMinutes()).padStart(2,'0')+' '+ap;
+}
+function tfDateKey(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function tfMeta(file, t){
+  /* A camera photo carries its capture time in lastModified. */
+  var d = (file && file.lastModified) ? new Date(file.lastModified) : new Date();
+  if(isNaN(d.getTime())) d = new Date();
+  if(Math.abs(Date.now() - d.getTime()) > 86400000) d = new Date();
+
+  var sel = document.getElementById('taskAssign');
+  var who = (sel && sel.value) || (t && t.assign) || '';
+  if(!who && typeof curRole === 'function' && curRole()) who = curRole().name || '';
+  return { when:d, at:tfFmtDT(d), by:who || '-', task:(t && t.name) || '' };
+}
+
+/* resize + stamp date/time and name onto the picture */
+function tfProcess(file, meta){
+  return new Promise(function(resolve, reject){
+    var fr = new FileReader();
+    fr.onerror = function(){ reject(new Error('Photo padhi nahi ja saki')); };
+    fr.onload = function(){
+      var img = new Image();
+      img.onerror = function(){ reject(new Error('Photo kholi nahi ja saki')); };
+      img.onload = function(){
+        try{
+          var w = img.width, h = img.height;
+          var s = Math.min(1, TF_MAX_SIDE / Math.max(w, h));
+          w = Math.max(1, Math.round(w*s)); h = Math.max(1, Math.round(h*s));
+
+          var c = document.createElement('canvas');
+          c.width = w; c.height = h;
+          var x = c.getContext('2d');
+          x.drawImage(img, 0, 0, w, h);
+
+          var pad = Math.round(Math.max(10, w*0.022));
+          var f1  = Math.round(Math.max(13, w*0.031));
+          var f2  = Math.round(f1*0.82);
+          var l1  = meta.at;
+          var l2  = meta.by + (meta.task ? '  ·  ' + meta.task : '');
+          var barH = pad*2 + f1 + f2 + Math.round(f1*0.30);
+
+          x.fillStyle = 'rgba(0,0,0,0.58)';
+          x.fillRect(0, h-barH, w, barH);
+
+          x.textBaseline = 'top';
+          x.fillStyle = '#FFFFFF';
+          x.font = '700 ' + f1 + 'px "DM Sans", Arial, sans-serif';
+          x.fillText(l1, pad, h-barH+pad);
+          x.fillStyle = 'rgba(255,255,255,0.88)';
+          x.font = '400 ' + f2 + 'px "DM Sans", Arial, sans-serif';
+          x.fillText(l2, pad, h-barH+pad+f1+Math.round(f1*0.28));
+
+          resolve(c.toDataURL('image/jpeg', TF_QUALITY));
+        }catch(err){ reject(err); }
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+
+/* POST to the Apps Script web app */
+function tfPost(payload){
+  var url = tfScriptUrl();
+  if(!url) return Promise.reject(new Error('Settings me Proof Upload Script URL nahi hai'));
+  var ctrl = new AbortController();
+  var timer = setTimeout(function(){ ctrl.abort(); }, TF_TIMEOUT);
+  return fetch(url, { method:'POST', body: JSON.stringify(payload), signal: ctrl.signal })
+    .then(function(r){
+      if(!r.ok) throw new Error('Server error ' + r.status);
+      return r.text();
+    })
+    .then(function(txt){
+      var j;
+      try { j = JSON.parse(txt); }
+      catch(e){ throw new Error('Apps Script ne galat jawab bheja - deployment / permission check karein'); }
+      return j;
+    })
+    .catch(function(e){
+      if(e && e.name === 'AbortError') throw new Error('Timeout - upload poora nahi hua, network dekh lein');
+      throw e;
+    })
+    .then(function(v){ clearTimeout(timer); return v; },
+          function(e){ clearTimeout(timer); throw e; });
+}
+
+/* main handler */
+function tfHandleFiles(fileList){
+  var t = (typeof tasks !== 'undefined') ? tasks.filter(function(x){ return x.id === viewingTaskId; })[0] : null;
+  if(!t) return;
+  if(!tfScriptUrl()){
+    showToast('Pehle Settings -> Data me Proof Upload Script URL daalein','e');
+    return;
+  }
+  var files = Array.prototype.slice.call(fileList || []);
+  if(!files.length) return;
+
+  files.reduce(function(chain, file){
+    return chain.then(function(){
+      if(!/^image\//.test(file.type || '')){
+        showToast('Sirf photo lag sakti hai','e');
+        return;
+      }
+      var meta  = tfMeta(file, t);
+      var entry = { local:'', uploading:true, failed:false, at:meta.at, by:meta.by };
+      tfPhotos.push(entry);
+      tfRenderPhotos();
+
+      return tfProcess(file, meta).then(function(dataUrl){
+        entry.local = dataUrl;
+        tfRenderPhotos();
+        var safe = function(s){ return String(s||'').replace(/[^\w\s-]/g,'').replace(/\s+/g,' ').trim().slice(0,40); };
+        var fname = safe(t.name) + '__' + safe(meta.by) + '__' +
+                    String(meta.when.getHours()).padStart(2,'0') + String(meta.when.getMinutes()).padStart(2,'0') +
+                    '__' + Date.now() + '.jpg';
+        return tfPost({
+          action: 'uploadProof',
+          imageData: dataUrl,
+          fileName: fname,
+          dateKey: tfDateKey(meta.when),
+          description: (t.name||'') + ' | ' + meta.at + ' | ' + meta.by
+        });
+      }).then(function(r){
+        if(r && r.success){
+          entry.uploading = false;
+          entry.fileId = r.fileId;
+          entry.viewUrl = r.viewUrl;
+          entry.thumbnailUrl = r.thumbnailUrl;
+          entry.shared = !!r.shared;
+          if(r.shared === false){
+            showToast('Photo Drive me chali gayi, par link sabke liye open nahi hua','e');
+          }
+          var linkBox = document.getElementById('taskProofLink');
+          if(linkBox && !linkBox.value) linkBox.value = r.viewUrl;
+        } else {
+          throw new Error((r && r.error) || 'Upload fail');
+        }
+      }).catch(function(err){
+        entry.uploading = false;
+        entry.failed = true;
+        showToast('Photo upload fail - ' + (err.message || err), 'e');
+      }).then(function(){
+        tfRenderPhotos();
+      });
+    });
+  }, Promise.resolve()).then(function(){
+    var okN = tfPhotos.filter(function(p){ return p.viewUrl; }).length;
+    if(okN) showToast('✓ ' + okN + ' photo taiyar - ab Mark Done ya Save dabaiye','s');
+  });
+}
+
+/* wire up (wait for the DOM so the buttons actually exist) */
+(function tfWire(){
+  function attach(){
+    var on = function(id, ev, fn){ var e = document.getElementById(id); if(e) e.addEventListener(ev, fn); };
+    on('tfCamBtn','click', function(){ var i=document.getElementById('tfCamInput'); if(i){ i.value=''; i.click(); } });
+    on('tfGalBtn','click', function(){ var i=document.getElementById('tfGalInput'); if(i){ i.value=''; i.click(); } });
+    on('tfCamInput','change', function(e){ tfHandleFiles(e.target.files); e.target.value=''; });
+    on('tfGalInput','change', function(e){ tfHandleFiles(e.target.files); e.target.value=''; });
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach);
+  else attach();
+})();
 </script>
 </body>
 </html>
