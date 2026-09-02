@@ -4,7 +4,8 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'tools/apply_proof_photos.py'
+      - 'tools/**.py'
+      - '.github/workflows/apply-proof-photos.yml'
 
 permissions:
   contents: write
@@ -15,8 +16,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Apply patch to index.html
-        run: python3 tools/apply_proof_photos.py
+      - name: Apply every patch script in tools/
+        run: |
+          set -e
+          for f in tools/*.py; do
+            echo "--- running $f"
+            python3 "$f"
+          done
 
       - name: Commit result
         run: |
@@ -27,5 +33,5 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add index.html
-          git commit -m "Add camera proof photos to task detail modal"
+          git commit -m "Apply Task FMS patch scripts to index.html"
           git push
