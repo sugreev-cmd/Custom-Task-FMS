@@ -1387,12 +1387,23 @@ function setSS(s,t){var d=document.getElementById('syncDot'),tx=document.getElem
 var loadedMonths = {};  // cache: {ym: [tasks]}
 var allTasks = [];      // global cache
 
+/* Last REAL day of a month, e.g. monthEnd('2026-09') -> '2026-09-30'.
+   Building the end date as <ym>+'-31' made Postgres reject the whole
+   query for 30-day months, so nothing loaded at all. */
+function monthEnd(ym){
+  var p = String(ym).split('-');
+  var y = parseInt(p[0],10), m = parseInt(p[1],10);
+  if(!y || !m) return ym + '-28';
+  var d = new Date(y, m, 0).getDate();
+  return ym + '-' + String(d).padStart(2,'0');
+}
+
 function loadMonth(ym, cb) {
   if(loadedMonths[ym]) { if(cb)cb(); return; }  // already cached
   setSS('saving', 'Loading ' + ymLabel(ym) + '...');
   var from = ym + '-01';
-  var to   = ym + '-31';
-  sbFetch('/'+TABLE+'?order=due_date.asc&due_date=gte.'+from+'&due_date=lte.'+to+'&limit=2000','GET')
+  var to   = monthEnd(ym);
+  sbFetch('/'+TABLE+'?order=due_date.asc&due_date=gte.'+from+'&due_date=lte.'+to+'&limit=5000','GET')
     .then(function(rows){
       var mapped = (rows||[]).map(mapRow);
       loadedMonths[ym] = mapped;
@@ -1430,7 +1441,7 @@ function loadData(){
   setSS('saving','Loading...');
   // Load last 2 months together for dashboard
   var from = prevYM + '-01';
-  var to   = curYM  + '-31';
+  var to   = monthEnd(curYM);
   sbFetch('/'+TABLE+'?order=due_date.asc&due_date=gte.'+from+'&due_date=lte.'+to+'&limit=5000','GET')
     .then(function(rows){
       allTasks = (rows||[]).map(mapRow);
