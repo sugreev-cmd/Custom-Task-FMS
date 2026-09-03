@@ -184,6 +184,34 @@ input,select,textarea,button{font-family:'DM Sans',sans-serif}
 .proof-link-view{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--teal2);border:1px solid rgba(0,191,165,.25);border-radius:6px;margin-top:6px}
 .proof-link-view a{color:var(--teal);text-decoration:none;font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .proof-link-view a:hover{text-decoration:underline}
+/* ===== PROOF GALLERY (saari photos ek saath) ===== */
+.proof-link-icon{padding:0;font-family:inherit;position:relative;gap:2px;width:auto;min-width:24px;padding:0 5px}
+.pi-n{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;margin-left:1px}
+.pg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.pg-cell{position:relative;aspect-ratio:1/1;border-radius:10px;overflow:hidden;background:var(--s3);border:1px solid var(--bd);cursor:zoom-in;transition:all .18s}
+.pg-cell:hover{border-color:var(--teal);transform:translateY(-2px)}
+.pg-cell img{width:100%;height:100%;object-fit:cover;display:block}
+.pg-n{position:absolute;top:5px;left:5px;background:rgba(0,0,0,.62);color:#fff;font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 6px;border-radius:5px;z-index:2}
+.pg-c{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(0,0,0,.85));color:#fff;font-size:9px;line-height:1.35;padding:14px 6px 5px}
+.pg-empty{grid-column:1/-1;text-align:center;padding:24px 10px;color:var(--dim);font-size:11px;line-height:1.7}
+.lb{display:none;position:fixed;inset:0;background:#000;z-index:400;align-items:center;justify-content:center}
+.lb.open{display:flex}
+.lb-img{max-width:94vw;max-height:80vh;object-fit:contain;border-radius:8px;-webkit-user-drag:none;user-select:none}
+.lb-x{position:absolute;top:14px;right:16px;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.5);color:#fff;font-size:16px;cursor:pointer;z-index:3}
+.lb-nav{position:absolute;top:50%;transform:translateY(-50%);width:46px;height:46px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.5);color:#fff;font-size:24px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:3}
+.lb-nav.prev{left:12px}.lb-nav.next{right:12px}
+.lb-nav:hover,.lb-x:hover{background:var(--teal);color:#08131c;border-color:var(--teal)}
+.lb-bar{position:absolute;bottom:0;left:0;right:0;padding:12px 16px 16px;text-align:center;background:linear-gradient(transparent,rgba(0,0,0,.85));z-index:2}
+.lb-cnt{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--teal);letter-spacing:1px}
+.lb-meta{font-size:11px;color:rgba(255,255,255,.82);margin-top:3px}
+.lb-open{display:inline-block;margin-top:8px;font-size:11px;color:var(--teal);text-decoration:none;border:1px solid rgba(0,191,165,.4);padding:5px 11px;border-radius:6px}
+.lb-open:hover{background:var(--teal);color:#08131c}
+.lb-strip{position:absolute;top:12px;left:70px;right:70px;display:flex;justify-content:center;gap:6px;overflow-x:auto;padding:4px;z-index:3}
+.lb-strip img{width:44px;height:44px;object-fit:cover;border-radius:6px;border:2px solid transparent;cursor:pointer;opacity:.5;flex-shrink:0}
+.lb-strip img.on{border-color:var(--teal);opacity:1}
+@media(max-width:640px){.lb-img{max-height:62vh}.lb-nav{width:40px;height:40px;font-size:20px}
+  .lb-strip{left:8px;right:60px;justify-content:flex-start}.lb-strip img{width:38px;height:38px}
+  .pg-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}}
 .mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;align-items:center;justify-content:center;backdrop-filter:blur(6px)}.mo.open{display:flex}
 .md{background:var(--s2);border:1px solid var(--bd);border-radius:14px;width:600px;max-width:96vw;max-height:92vh;overflow-y:auto;animation:mIn .22s ease;box-shadow:0 40px 80px rgba(0,0,0,.4);}
 @keyframes mIn{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
@@ -748,6 +776,29 @@ html{-webkit-text-size-adjust:100%}
   </div>
 </div>
 
+<!-- PROOF GALLERY MODAL - ek task ki SAARI proof photos -->
+<div class="mo" id="proofGalMo">
+  <div class="md">
+    <div class="mh"><div class="mt" id="pgTitle">Proof <span>Photos</span></div><button class="mclose" onclick="closeMo('proofGalMo')">✕</button></div>
+    <div class="mb"><div class="pg-grid" id="pgGrid"></div></div>
+    <div class="mf"><button class="bs" onclick="closeMo('proofGalMo')">Close</button></div>
+  </div>
+</div>
+
+<!-- LIGHTBOX - full screen photo viewer -->
+<div class="lb" id="pgLb" onclick="if(event.target===this)pgClose()">
+  <button class="lb-x" type="button" onclick="pgClose()">✕</button>
+  <button class="lb-nav prev" type="button" onclick="pgStep(-1)">‹</button>
+  <button class="lb-nav next" type="button" onclick="pgStep(1)">›</button>
+  <div class="lb-strip" id="pgStrip"></div>
+  <img class="lb-img" id="pgImg" alt="Proof photo">
+  <div class="lb-bar">
+    <div class="lb-cnt" id="pgCnt"></div>
+    <div class="lb-meta" id="pgMeta"></div>
+    <a class="lb-open" id="pgOpenLink" target="_blank" rel="noopener">↗ Open in Drive</a>
+  </div>
+</div>
+
 <!-- ADD TASK MODAL -->
 <div class="mo" id="addTaskMo">
   <div class="md">
@@ -1114,7 +1165,10 @@ function sqlText(){
     +'  id text primary key,\n  section text,\n  name text,\n  freq text,\n'
     +'  due_date date,\n  actual_date date,\n  status text,\n  assigned_to text,\n'
     +'  notes text,\n  month_key text,\n  is_custom boolean default false,\n'
-    +'  proof_link text,\n  updated_at timestamptz default now()\n);\n\n'
+    +'  proof_link text,\n  proof_photos jsonb not null default \'[]\'::jsonb,\n'
+    +'  updated_at timestamptz default now()\n);\n\n'
+    +'-- agar table pehle se bani hai to ye line multi-photo ke liye zaroori hai\n'
+    +'alter table public.'+t+' add column if not exists proof_photos jsonb not null default \'[]\'::jsonb;\n\n'
     +'alter table public.'+t+' enable row level security;\n'
     +'alter table public.'+t+' force row level security;\n\n'
     +'-- sirf logged-in (authenticated) users hi data chhu sakte hain\n'
@@ -1154,9 +1208,15 @@ function resetSettings(){
 /* ======================================================
    BULK ADD - list paste karo, week-off + holidays apne aap lagenge
    ====================================================== */
-function taskToRow(t){return {id:t.id,section:t.section,name:t.name,freq:t.freq,due_date:t.dueDate,
-  actual_date:t.actualDate||null,status:t.status,assigned_to:t.assign||'',notes:t.notes||'',
-  month_key:t.monthKey,is_custom:!!t.isCustom,proof_link:t.proofLink||'',proof_photos:t.proofPhotos||[],updated_at:new Date().toISOString()};}
+var PROOF_COL_OK = true;   /* false ho jaye to DB me proof_photos column nahi hai */
+function taskToRow(t){
+  var r={id:t.id,section:t.section,name:t.name,freq:t.freq,due_date:t.dueDate,
+    actual_date:t.actualDate||null,status:t.status,assigned_to:t.assign||'',notes:t.notes||'',
+    month_key:t.monthKey,is_custom:!!t.isCustom,proof_link:t.proofLink||'',
+    proof_photos:t.proofPhotos||[],updated_at:new Date().toISOString()};
+  if(!PROOF_COL_OK) delete r.proof_photos;
+  return r;
+}
 function _h1(s){var h=5381;for(var i=0;i<s.length;i++){h=(((h<<5)+h)+s.charCodeAt(i))>>>0;}return h.toString(36);}
 function _h2(s){var h=0;for(var i=0;i<s.length;i++){h=(s.charCodeAt(i)+(h<<6)+(h<<16)-h)>>>0;}return h.toString(36);}
 function bulkId(sec,name,date){var k=sec+'|'+name+'|'+date;return 'B'+_h1(k)+'-'+_h2(k);}
@@ -1492,17 +1552,65 @@ function loadData(){
     .catch(function(e){ setSS('err','Load failed'); console.error(e); showToast('Load failed — check Supabase','e'); });
 }
 function mapRow(r){return{id:r.id,section:r.section||'',name:r.name||'',freq:r.freq||'Monthly',dueDate:r.due_date||'',actualDate:r.actual_date||'',status:r.status||'Pending',assign:r.assigned_to||'',notes:r.notes||'',monthKey:r.month_key||'',isCustom:r.is_custom||false,proofLink:r.proof_link||'',proofPhotos:Array.isArray(r.proof_photos)?r.proof_photos:[]};}
-function saveTask(task,cb){setSS('saving','Saving...');var row={id:task.id,section:task.section,name:task.name,freq:task.freq,due_date:task.dueDate,actual_date:task.actualDate||null,status:task.status,assigned_to:task.assign||'',notes:task.notes||'',month_key:task.monthKey,is_custom:task.isCustom||false,proof_link:task.proofLink||'',proof_photos:task.proofPhotos||[],updated_at:new Date().toISOString()};sbFetch('/'+TABLE+'?on_conflict=id','POST',row).then(function(){setSS('saved','✓ Saved');if(cb)cb();}).catch(function(){sbFetch('/'+TABLE+'?id=eq.'+task.id,'PATCH',row).then(function(){setSS('saved','✓ Saved');if(cb)cb();}).catch(function(e){setSS('err','Save failed');showToast('Save failed','e');console.error(e);});});}
+function saveTask(task,cb){
+  setSS('saving','Saving...');
+  var send=function(row){
+    return sbFetch('/'+TABLE+'?on_conflict=id','POST',row)
+      .catch(function(e1){
+        var m1=String((e1&&e1.message)||e1||'');
+        if(/proof_photos/i.test(m1)) throw e1;
+        return sbFetch('/'+TABLE+'?id=eq.'+task.id,'PATCH',row);
+      });
+  };
+  var done=function(){setSS('saved','✓ Saved');if(cb)cb();};
+  var fail=function(e){setSS('err','Save failed');showToast('Save failed','e');console.error(e);};
+  send(taskToRow(task)).then(done,function(e){
+    var msg=String((e&&e.message)||e||'');
+    if(PROOF_COL_OK && /proof_photos/i.test(msg)){
+      PROOF_COL_OK=false;
+      showToast('DB me proof_photos column nahi hai - Settings > Data wala SQL chala dein, tabhi saari photos save hongi','e');
+      send(taskToRow(task)).then(done,fail);
+    } else fail(e);
+  });
+}
 function deleteTask_db(id,cb){sbFetch('/'+TABLE+'?id=eq.'+id,'DELETE').then(function(){setSS('saved','✓ Saved');if(cb)cb();}).catch(function(){setSS('err','Error');showToast('Delete failed','e');});}
 function calcStatus(task){if(task.actualDate)return'Done';if(task.dueDate<today())return'Overdue';if(task.dueDate===today())return'Due Today';return'Pending';}
 
 // ✅ FIX: getTasksForMonth uses role filter
 function getTasksForMonth(ym){return filterTasksByRole((allTasks||tasks).filter(function(t){return t.dueDate&&t.dueDate.substring(0,7)===ym;}));}
 
+/* ---- Drive helpers: file id nikalna aur image URL banana ---- */
+function driveId(u){var m=String(u||'').match(/[-\w]{25,}/);return m?m[0]:'';}
+function driveImg(p,sz){
+  if(!p)return'';
+  var id=p.fileId||driveId(p.viewUrl);
+  if(id)return'https://drive.google.com/thumbnail?id='+id+'&sz=w'+(sz||600);
+  return p.thumbnailUrl||p.local||'';
+}
+/* task ki saari proof photos ek list me (purana single proofLink bhi shamil) */
+function proofPhotoList(t){
+  var out=[];
+  if(t&&Array.isArray(t.proofPhotos)){
+    t.proofPhotos.forEach(function(p){
+      if(p&&(p.viewUrl||p.thumbnailUrl||p.fileId||p.local))out.push(p);
+    });
+  }
+  if(t&&t.proofLink){
+    var lid=driveId(t.proofLink);
+    var dup=out.some(function(p){
+      return (p.viewUrl&&p.viewUrl===t.proofLink)||(lid&&(p.fileId===lid||driveId(p.viewUrl)===lid));
+    });
+    if(!dup)out.push({viewUrl:t.proofLink,fileId:lid,thumbnailUrl:'',at:'',by:'Manual link'});
+  }
+  return out;
+}
 function renderProofIcon(task){
-  if(!task.proofLink)return'<span style="color:var(--dim);font-size:10px">—</span>';
-  if(isAdmin())return'<a href="'+escH(task.proofLink)+'" target="_blank" rel="noopener" class="proof-link-icon" title="Open proof" onclick="event.stopPropagation()">🔗</a>';
-  return'<span class="proof-link-icon disabled" title="Owner only">🔒</span>';
+  var n=proofPhotoList(task).length;
+  if(!n)return'<span style="color:var(--dim);font-size:10px">—</span>';
+  if(!isAdmin())return'<span class="proof-link-icon disabled" title="Owner only">🔒</span>';
+  return'<button type="button" class="proof-link-icon" title="'+n+' proof photo'+(n===1?'':'s')+' dekhein" '
+       +'onclick="event.stopPropagation();openProofGallery(\''+task.id+'\')">🖼'
+       +(n>1?'<b class="pi-n">'+n+'</b>':'')+'</button>';
 }
 function freqBadge(f){return f==='Daily'?'fb-d':f==='Weekly'?'fb-w':f==='Quarterly'?'fb-q':f==='Annual'?'fb-a':'fb-m';}
 
@@ -1672,6 +1780,135 @@ window.onload=function(){
 };
 
 /* ==============================================================
+   PROOF GALLERY + LIGHTBOX
+   Proof icon dabate hi task ki SAARI photos dikhti hain
+   ============================================================== */
+var PG = [], PGi = 0;
+
+function openProofGallery(id){
+  var t = (typeof tasks !== 'undefined') ? tasks.filter(function(x){ return x.id === id; })[0] : null;
+  if(!t) return;
+  if(typeof isAdmin === 'function' && !isAdmin()){ showToast('Proof sirf Owner dekh sakte hain','e'); return; }
+  PG = proofPhotoList(t);
+  var ttl = document.getElementById('pgTitle');
+  if(ttl) ttl.innerHTML = escH(t.name || 'Proof') + ' <span>' + PG.length + ' photo' + (PG.length===1?'':'s') + '</span>';
+  pgRenderGrid();
+  openMo('proofGalMo');
+}
+
+function pgRenderGrid(){
+  var g = document.getElementById('pgGrid');
+  if(!g) return;
+  if(!PG.length){
+    g.innerHTML = '<div class="pg-empty">Is task me koi proof photo nahi mili.<br>Task kholkar <b>Take Photo</b> se photo lagayein.</div>';
+    return;
+  }
+  g.innerHTML = PG.map(function(p,i){
+    var src = driveImg(p,400) || p.local || '';
+    var cap = (p.at||'') + (p.by ? (p.at?' · ':'') + p.by : '');
+    return '<div class="pg-cell" onclick="pgOpen('+i+')" title="Bada dekhein">'
+      + '<span class="pg-n">'+(i+1)+'</span>'
+      + (src ? '<img src="'+escH(src)+'" loading="lazy" alt="proof '+(i+1)+'" onerror="pgImgFail(this,'+i+')">' : '')
+      + (cap ? '<div class="pg-c">'+escH(cap)+'</div>' : '')
+      + '</div>';
+  }).join('');
+}
+
+function pgImgFail(img,i){
+  if(img.getAttribute('data-tried')){ img.onerror=null; img.style.opacity=.15; return; }
+  img.setAttribute('data-tried','1');
+  var p = PG[i] || {};
+  var alt = p.local || p.thumbnailUrl || '';
+  if(alt) img.src = alt; else { img.onerror=null; img.style.opacity=.15; }
+}
+
+function pgOpen(i){
+  if(!PG.length) return;
+  PGi = Math.max(0, Math.min(i, PG.length-1));
+  pgPaint();
+  var lb = document.getElementById('pgLb');
+  if(lb) lb.classList.add('open');
+}
+function pgClose(){
+  var lb = document.getElementById('pgLb');
+  if(lb) lb.classList.remove('open');
+}
+function pgStep(d){
+  if(PG.length < 2) return;
+  PGi = (PGi + d + PG.length) % PG.length;
+  pgPaint();
+}
+function pgPaint(){
+  var p = PG[PGi] || {};
+  var img = document.getElementById('pgImg');
+  if(img){
+    img.removeAttribute('data-tried');
+    img.style.opacity = 1;
+    img.onerror = function(){
+      if(img.getAttribute('data-tried')){ img.onerror=null; return; }
+      img.setAttribute('data-tried','1');
+      var alt = p.local || p.thumbnailUrl || '';
+      if(alt) img.src = alt; else img.onerror = null;
+    };
+    img.src = driveImg(p,1600) || p.local || '';
+  }
+  var c = document.getElementById('pgCnt');
+  if(c) c.textContent = (PGi+1) + ' / ' + PG.length;
+  var m = document.getElementById('pgMeta');
+  if(m) m.textContent = (p.at||'') + (p.by ? (p.at?'  ·  ':'') + p.by : '');
+  var a = document.getElementById('pgOpenLink');
+  if(a){
+    if(p.viewUrl){ a.href = p.viewUrl; a.style.display='inline-block'; }
+    else a.style.display='none';
+  }
+  var s = document.getElementById('pgStrip');
+  if(s){
+    s.innerHTML = (PG.length > 1) ? PG.map(function(q,i){
+      return '<img src="'+escH(driveImg(q,120)||q.local||'')+'" class="'+(i===PGi?'on':'')+'" onclick="pgOpen('+i+')" alt="'+(i+1)+'">';
+    }).join('') : '';
+  }
+  var prev = document.querySelector('#pgLb .lb-nav.prev'), next = document.querySelector('#pgLb .lb-nav.next');
+  var multi = PG.length > 1;
+  if(prev) prev.style.display = multi ? 'flex' : 'none';
+  if(next) next.style.display = multi ? 'flex' : 'none';
+}
+
+/* task detail modal ke thumbnail se bhi lightbox khule */
+function tfOpenLb(i){
+  PG = tfPhotos.slice();
+  pgOpen(i);
+}
+
+/* keyboard: <- -> Esc */
+document.addEventListener('keydown', function(e){
+  var lb = document.getElementById('pgLb');
+  if(!lb || !lb.classList.contains('open')) return;
+  if(e.key === 'Escape') pgClose();
+  else if(e.key === 'ArrowRight') pgStep(1);
+  else if(e.key === 'ArrowLeft')  pgStep(-1);
+});
+
+/* mobile swipe */
+(function pgSwipe(){
+  function attach(){
+    var lb = document.getElementById('pgLb');
+    if(!lb) return;
+    var x0 = null, y0 = 0;
+    lb.addEventListener('touchstart', function(e){
+      var t = e.changedTouches[0]; x0 = t.clientX; y0 = t.clientY;
+    }, {passive:true});
+    lb.addEventListener('touchend', function(e){
+      if(x0 === null) return;
+      var t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0;
+      x0 = null;
+      if(Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy)) pgStep(dx < 0 ? 1 : -1);
+    }, {passive:true});
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', attach);
+  else attach();
+})();
+
+/* ==============================================================
    PROOF PHOTOS  -  camera -> stamp -> Google Drive -> link saved
    Upload endpoint: Apps Script web app (Settings -> Data)
    ============================================================== */
@@ -1726,13 +1963,15 @@ function tfRenderPhotos(){
   }
 
   g.innerHTML = tfPhotos.map(function(p,i){
-    var src = p.thumbnailUrl || p.local || '';
-    var h = '<div class="tf-ph'+(p.uploading?' up':'')+(p.failed?' bad':'')+'">';
+    var src = p.local || p.thumbnailUrl || driveImg(p,400) || '';
+    var can = !p.uploading && !p.failed;
+    var h = '<div class="tf-ph'+(p.uploading?' up':'')+(p.failed?' bad':'')+'"'
+          + (can?' style="cursor:zoom-in" title="Bada dekhein" onclick="tfOpenLb('+i+')"':'') + '>';
     h += src ? '<img src="'+escH(src)+'" loading="lazy" onerror="this.style.opacity=.2">' : '';
     if(p.uploading) h += '<div class="tf-ov">Uploading...</div>';
     else if(p.failed) h += '<div class="tf-ov bad">Failed</div>';
     if(p.viewUrl) h += '<a class="tf-open" href="'+escH(p.viewUrl)+'" target="_blank" rel="noopener" title="Open in Drive" onclick="event.stopPropagation()">↗</a>';
-    if(!ro) h += '<button type="button" class="tf-del" title="Remove" onclick="tfRemovePhoto('+i+')">✕</button>';
+    if(!ro) h += '<button type="button" class="tf-del" title="Remove" onclick="event.stopPropagation();tfRemovePhoto('+i+')">✕</button>';
     h += '<div class="tf-cap">'+escH(p.at||'')+(p.by?'<br>'+escH(p.by):'')+'</div>';
     h += '</div>';
     return h;
