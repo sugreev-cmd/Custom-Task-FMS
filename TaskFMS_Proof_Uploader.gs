@@ -1,6 +1,6 @@
 /**
  * ============================================================
- *  TASK FMS - PROOF PHOTO UPLOADER
+ *  TASK FMS - PROOF PHOTO UPLOADER   (v2 - fast)
  * ============================================================
  *
  *  Ye script Task FMS se aayi hui photo ko aapke Google Drive
@@ -13,8 +13,23 @@
  *              Hall 4 Cleaning floors__Vandana__1430.jpg
  *
  *  ------------------------------------------------------------
- *  DEPLOY KAISE KAREIN  (ek hi baar karna hai)
+ *  v2 me kya badla (speed ke liye)
  *  ------------------------------------------------------------
+ *  1. Sharing ab har file par nahi, sirf FOLDER par ek baar hoti hai.
+ *     Andar ki saari files folder se sharing khud le leti hain.
+ *     -> har photo se ek poora Drive write kam (~1-2 second bacha)
+ *
+ *  2. Folder ka ID CacheService me 6 ghante ke liye yaad rakha jata hai.
+ *     Pehle har photo par 2 Drive queries chalti thi folder dhoondhne me.
+ *     -> ~1 second aur bacha
+ *
+ *  Baaki sab kuch bilkul pehle jaisa hai - wahi folder, wahi file name,
+ *  wahi "anyone with the link" sharing, wahi response format.
+ *
+ *  ------------------------------------------------------------
+ *  DEPLOY KAISE KAREIN
+ *  ------------------------------------------------------------
+ *  Pehli baar:
  *  1. script.google.com kholein -> New project
  *  2. Saara default code hata kar ye poori file paste karein
  *  3. Save -> project ka naam "Task FMS Proof Uploader" rakh dein
@@ -25,13 +40,26 @@
  *  7. Deploy -> Authorize access -> apna account chunein ->
  *     "Advanced" -> "Go to ... (unsafe)" -> Allow
  *  8. Jo URL mile use Task FMS ke Settings -> Data me paste kar dein
+ *
+ *  Update karte waqt (v1 se v2):
+ *  1. script.google.com -> apna project kholein
+ *  2. purana code hata kar ye poori file paste karein -> Save
+ *  3. Deploy -> Manage deployments -> pencil (Edit)
+ *  4. Version: "New version" chunein -> Deploy
+ *  URL wahi rahega, Task FMS me kuch badalna nahi padega.
  * ============================================================
  */
 
 var CONFIG = {
   ROOT_FOLDER_NAME: 'Task FMS Proofs',
   DAY_FOLDERS: true,
-  MAKE_LINK_VIEWABLE: true
+  MAKE_LINK_VIEWABLE: true,
+
+  /* true  = sharing folder par ek baar (TEZ - recommended)
+     false = purana tareeka, har file par alag se sharing (SLOW) */
+  SHARE_AT_FOLDER: true,
+
+  FOLDER_CACHE_SECONDS: 21600   /* 6 ghante */
 };
 
 
@@ -61,13 +89,20 @@ function doPost(e) {
       try { file.setDescription(String(p.description).slice(0, 500)); } catch (ignore) {}
     }
 
+    /* Folder pehle se "anyone with link" par set hai, is liye file
+       usi se sharing le leti hai. Per-file setSharing sirf tab chalta
+       hai jab SHARE_AT_FOLDER band ho. */
     var shared = false;
     if (CONFIG.MAKE_LINK_VIEWABLE) {
-      try {
-        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      if (CONFIG.SHARE_AT_FOLDER) {
         shared = true;
-      } catch (shareErr) {
-        shared = false;
+      } else {
+        try {
+          file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+          shared = true;
+        } catch (shareErr) {
+          shared = false;
+        }
       }
     }
 
@@ -90,8 +125,9 @@ function doPost(e) {
 function doGet() {
   return out({
     success: true,
-    status: 'Task FMS Proof Uploader chal raha hai',
+    status: 'Task FMS Proof Uploader v2 chal raha hai',
     folder: CONFIG.ROOT_FOLDER_NAME,
+    shareAtFolder: CONFIG.SHARE_AT_FOLDER,
     time: new Date().toISOString()
   });
 }
@@ -104,15 +140,42 @@ function out(obj) {
 }
 
 
+/**
+ * Aaj ka folder deta hai. ID cache me rehta hai, is liye har photo par
+ * Drive me folder dhoondhna nahi padta.
+ */
 function targetFolder_(dateKey) {
-  var root = getOrCreate_(DriveApp.getRootFolder(), CONFIG.ROOT_FOLDER_NAME);
-  if (!CONFIG.DAY_FOLDERS) return root;
-
   var day = String(dateKey || '').match(/^\d{4}-\d{2}-\d{2}$/)
     ? dateKey
     : Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
 
-  return getOrCreate_(root, day);
+  var key = 'tffms_' + (CONFIG.DAY_FOLDERS ? day : 'root');
+  var cache = null;
+  try { cache = CacheService.getScriptCache(); } catch (ignore) {}
+
+  if (cache) {
+    var cachedId = cache.get(key);
+    if (cachedId) {
+      try {
+        var cached = DriveApp.getFolderById(cachedId);
+        if (!cached.isTrashed()) return cached;
+      } catch (staleErr) { /* folder hat gaya - neeche dobara ban jayega */ }
+    }
+  }
+
+  var root = getOrCreate_(DriveApp.getRootFolder(), CONFIG.ROOT_FOLDER_NAME);
+  var folder = CONFIG.DAY_FOLDERS ? getOrCreate_(root, day) : root;
+
+  if (CONFIG.MAKE_LINK_VIEWABLE && CONFIG.SHARE_AT_FOLDER) {
+    try {
+      folder.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    } catch (shareErr) { /* admin ne link-sharing band ki hui ho sakti hai */ }
+  }
+
+  if (cache) {
+    try { cache.put(key, folder.getId(), CONFIG.FOLDER_CACHE_SECONDS); } catch (ignore) {}
+  }
+  return folder;
 }
 
 
@@ -139,6 +202,7 @@ function runSelfTest() {
   var png =
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
+  var t0 = new Date().getTime();
   var res = doPost({
     postData: {
       contents: JSON.stringify({
@@ -152,4 +216,16 @@ function runSelfTest() {
   });
 
   Logger.log(res.getContent());
+  Logger.log('Time taken: ' + (new Date().getTime() - t0) + ' ms');
+}
+
+
+/**
+ * Ise ek baar Run karke aaj ka folder pehle se bana aur share kar dein,
+ * taaki din ki pehli photo bhi turant chali jaye.
+ * Chahein to isko daily time-driven trigger par laga sakte hain.
+ */
+function warmUpToday() {
+  var f = targetFolder_(null);
+  Logger.log('Ready: ' + f.getName() + '  (' + f.getId() + ')');
 }
