@@ -1914,9 +1914,11 @@ document.addEventListener('keydown', function(e){
    ============================================================== */
 
 var tfPhotos = [];                 // photos of the task currently open
-var TF_MAX_SIDE = 1400;            // px - long edge after resize
-var TF_QUALITY  = 0.82;            // jpeg quality
-var TF_TIMEOUT  = 60000;           // ms
+var TF_MAX_SIDE = 1200;            // px - long edge after resize
+var TF_QUALITY  = 0.72;            // jpeg quality
+var TF_TIMEOUT  = 45000;           // ms per attempt
+var TF_CONC     = 3;               // kitni photos ek saath upload hongi
+var TF_RETRY    = 3;               // har photo ke kitne attempts
 
 function tfScriptUrl(){
   var u = (typeof SETTINGS === 'object' && SETTINGS) ? (SETTINGS.proofScriptUrl || '') : '';
@@ -1946,13 +1948,20 @@ function tfCleanPhotos(){
   });
 }
 
+function tfInFlight(){
+  return tfPhotos.filter(function(p){ return p && p.uploading; }).length;
+}
+
 function tfRenderPhotos(){
   var g = document.getElementById('tfPhotoGrid');
   if(!g) return;
   var ro = (typeof isRO === 'function') ? isRO() : false;
   var cnt = document.getElementById('tfCount');
   var okN = tfPhotos.filter(function(p){ return p && p.viewUrl; }).length;
-  if(cnt) cnt.textContent = tfPhotos.length ? (okN + ' photo' + (okN===1?'':'s')) : '';
+  var upN = tfInFlight();
+  if(cnt) cnt.textContent = tfPhotos.length
+    ? (okN + ' photo' + (okN===1?'':'s') + (upN ? '  ·  ' + upN + ' ja rahi hai' : ''))
+    : '';
 
   if(!tfPhotos.length){
     g.innerHTML = '<div class="tf-empty">' +
@@ -1969,7 +1978,9 @@ function tfRenderPhotos(){
           + (can?' style="cursor:zoom-in" title="Bada dekhein" onclick="tfOpenLb('+i+')"':'') + '>';
     h += src ? '<img src="'+escH(src)+'" loading="lazy" onerror="this.style.opacity=.2">' : '';
     if(p.uploading) h += '<div class="tf-ov">Uploading...</div>';
-    else if(p.failed) h += '<div class="tf-ov bad">Failed</div>';
+    else if(p.failed) h += '<div class="tf-ov bad" title="'+escH(p.err||'')+'" '
+          + (p.payload && !ro ? 'style="cursor:pointer" onclick="event.stopPropagation();tfRetryPhoto('+i+')"' : '')
+          + '>Failed'+(p.payload && !ro ? '<br><u>Retry</u>' : '')+'</div>';
     if(p.viewUrl) h += '<a class="tf-open" href="'+escH(p.viewUrl)+'" target="_blank" rel="noopener" title="Open in Drive" onclick="event.stopPropagation()">↗</a>';
     if(!ro) h += '<button type="button" class="tf-del" title="Remove" onclick="event.stopPropagation();tfRemovePhoto('+i+')">✕</button>';
     h += '<div class="tf-cap">'+escH(p.at||'')+(p.by?'<br>'+escH(p.by):'')+'</div>';
@@ -1985,6 +1996,14 @@ function tfRemovePhoto(i){
   if(!confirm('Ye photo list se hata dein?\n\n(Drive me file rahegi, sirf task se hatt jayegi.)')) return;
   tfPhotos.splice(i,1);
   tfRenderPhotos();
+}
+
+/* failed photo dobara bhejein - image already memory me hai */
+function tfRetryPhoto(i){
+  var p = tfPhotos[i];
+  if(!p) return;
+  if(!p.payload){ showToast('Ye photo dobara nahi bheji ja sakti - nayi photo lijiye','e'); return; }
+  tfUploadOne(p);
 }
 
 /* date / time of capture */
@@ -2009,58 +2028,85 @@ function tfMeta(file, t){
   return { when:d, at:tfFmtDT(d), by:who || '-', task:(t && t.name) || '' };
 }
 
+/* ---- decode ----
+   createImageBitmap main thread block nahi karta aur poori photo ka
+   base64 memory me nahi banata. Na chale to objectURL wala rasta.       */
+function tfDecodeViaImg(file){
+  return new Promise(function(resolve, reject){
+    var url = URL.createObjectURL(file);
+    var img = new Image();
+    img.onload = function(){
+      resolve({ src:img, w:img.naturalWidth||img.width, h:img.naturalHeight||img.height,
+                close:function(){ try{ URL.revokeObjectURL(url); }catch(e){} } });
+    };
+    img.onerror = function(){ try{ URL.revokeObjectURL(url); }catch(e){} reject(new Error('Photo kholi nahi ja saki')); };
+    img.src = url;
+  });
+}
+function tfDecode(file){
+  if(typeof createImageBitmap === 'function'){
+    try{
+      return createImageBitmap(file).then(function(bmp){
+        return { src:bmp, w:bmp.width, h:bmp.height, close:function(){ try{ bmp.close(); }catch(e){} } };
+      }, function(){ return tfDecodeViaImg(file); });
+    }catch(e){ return tfDecodeViaImg(file); }
+  }
+  return tfDecodeViaImg(file);
+}
+
 /* resize + stamp date/time and name onto the picture */
 function tfProcess(file, meta){
-  return new Promise(function(resolve, reject){
-    var fr = new FileReader();
-    fr.onerror = function(){ reject(new Error('Photo padhi nahi ja saki')); };
-    fr.onload = function(){
-      var img = new Image();
-      img.onerror = function(){ reject(new Error('Photo kholi nahi ja saki')); };
-      img.onload = function(){
-        try{
-          var w = img.width, h = img.height;
-          var s = Math.min(1, TF_MAX_SIDE / Math.max(w, h));
-          w = Math.max(1, Math.round(w*s)); h = Math.max(1, Math.round(h*s));
+  return tfDecode(file).then(function(d){
+    try{
+      var s = Math.min(1, TF_MAX_SIDE / Math.max(d.w, d.h));
+      var w = Math.max(1, Math.round(d.w*s)), h = Math.max(1, Math.round(d.h*s));
 
-          var c = document.createElement('canvas');
-          c.width = w; c.height = h;
-          var x = c.getContext('2d');
-          x.drawImage(img, 0, 0, w, h);
+      var c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      var x = c.getContext('2d');
+      x.drawImage(d.src, 0, 0, w, h);
 
-          var pad = Math.round(Math.max(10, w*0.022));
-          var f1  = Math.round(Math.max(13, w*0.031));
-          var f2  = Math.round(f1*0.82);
-          var l1  = meta.at;
-          var l2  = meta.by + (meta.task ? '  ·  ' + meta.task : '');
-          var barH = pad*2 + f1 + f2 + Math.round(f1*0.30);
+      var pad = Math.round(Math.max(10, w*0.022));
+      var f1  = Math.round(Math.max(13, w*0.031));
+      var f2  = Math.round(f1*0.82);
+      var l1  = meta.at;
+      var l2  = meta.by + (meta.task ? '  ·  ' + meta.task : '');
+      var barH = pad*2 + f1 + f2 + Math.round(f1*0.30);
 
-          x.fillStyle = 'rgba(0,0,0,0.58)';
-          x.fillRect(0, h-barH, w, barH);
+      x.fillStyle = 'rgba(0,0,0,0.58)';
+      x.fillRect(0, h-barH, w, barH);
 
-          x.textBaseline = 'top';
-          x.fillStyle = '#FFFFFF';
-          x.font = '700 ' + f1 + 'px "DM Sans", Arial, sans-serif';
-          x.fillText(l1, pad, h-barH+pad);
-          x.fillStyle = 'rgba(255,255,255,0.88)';
-          x.font = '400 ' + f2 + 'px "DM Sans", Arial, sans-serif';
-          x.fillText(l2, pad, h-barH+pad+f1+Math.round(f1*0.28));
+      x.textBaseline = 'top';
+      x.fillStyle = '#FFFFFF';
+      x.font = '700 ' + f1 + 'px "DM Sans", Arial, sans-serif';
+      x.fillText(l1, pad, h-barH+pad);
+      x.fillStyle = 'rgba(255,255,255,0.88)';
+      x.font = '400 ' + f2 + 'px "DM Sans", Arial, sans-serif';
+      x.fillText(l2, pad, h-barH+pad+f1+Math.round(f1*0.28));
 
-          resolve(c.toDataURL('image/jpeg', TF_QUALITY));
-        }catch(err){ reject(err); }
-      };
-      img.src = fr.result;
-    };
-    fr.readAsDataURL(file);
+      var out = c.toDataURL('image/jpeg', TF_QUALITY);
+      c.width = c.height = 1;          /* canvas memory turant chhodein */
+      return out;
+    } finally {
+      d.close();
+    }
   });
 }
 
-/* POST to the Apps Script web app */
-function tfPost(payload){
+function tfSleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+
+/* in errors par retry ka fayda nahi hai */
+function tfPermanent(msg){
+  return /No image data|Unknown action|Empty request|Script URL nahi/i.test(String(msg||''));
+}
+
+/* ek POST - Apps Script web app par */
+function tfPostOnce(payload){
   var url = tfScriptUrl();
   if(!url) return Promise.reject(new Error('Settings me Proof Upload Script URL nahi hai'));
   var ctrl = new AbortController();
   var timer = setTimeout(function(){ ctrl.abort(); }, TF_TIMEOUT);
+  var done = function(){ clearTimeout(timer); };
   return fetch(url, { method:'POST', body: JSON.stringify(payload), signal: ctrl.signal })
     .then(function(r){
       if(!r.ok) throw new Error('Server error ' + r.status);
@@ -2072,12 +2118,94 @@ function tfPost(payload){
       catch(e){ throw new Error('Apps Script ne galat jawab bheja - deployment / permission check karein'); }
       return j;
     })
-    .catch(function(e){
-      if(e && e.name === 'AbortError') throw new Error('Timeout - upload poora nahi hua, network dekh lein');
-      throw e;
-    })
-    .then(function(v){ clearTimeout(timer); return v; },
-          function(e){ clearTimeout(timer); throw e; });
+    .then(function(v){ done(); return v; },
+          function(e){
+            done();
+            if(e && e.name === 'AbortError') throw new Error('Timeout - upload poora nahi hua');
+            throw e;
+          });
+}
+
+/* POST + apne aap retry (0.6s, 1.2s) */
+function tfPost(payload, attempt){
+  attempt = attempt || 1;
+  var again = function(){
+    return tfSleep(600 * Math.pow(2, attempt-1)).then(function(){ return tfPost(payload, attempt+1); });
+  };
+  return tfPostOnce(payload).then(function(r){
+    if(r && r.success) return r;
+    var msg = (r && r.error) || 'Upload fail';
+    if(attempt < TF_RETRY && !tfPermanent(msg)) return again();
+    throw new Error(msg);
+  }, function(err){
+    var msg = (err && err.message) || String(err);
+    if(attempt < TF_RETRY && !tfPermanent(msg)) return again();
+    throw err;
+  });
+}
+
+/* upload poora hone ke baad photo ko task me chipka dein.
+   Modal band ho chuka ho to bhi photo apne aap task me chali jayegi. */
+function tfAttachToTask(e){
+  if(!e || !e.taskId || !e.viewUrl) return;
+  if(typeof tasks === 'undefined') return;
+  var t = tasks.filter(function(x){ return x.id === e.taskId; })[0];
+  if(!t) return;
+  var list = Array.isArray(t.proofPhotos) ? t.proofPhotos.slice() : [];
+  var dup = list.some(function(p){ return p && (p.viewUrl === e.viewUrl || (e.fileId && p.fileId === e.fileId)); });
+  if(dup) return;
+  list.push({ fileId:e.fileId||'', viewUrl:e.viewUrl, thumbnailUrl:e.thumbnailUrl||'',
+              at:e.at||'', by:e.by||'' });
+  t.proofPhotos = list;
+  if(!t.proofLink) t.proofLink = e.viewUrl;
+  if(typeof saveTask === 'function'){
+    saveTask(t, function(){ if(typeof buildAll === 'function') buildAll(); });
+  }
+}
+
+function tfUploadOne(entry){
+  if(!entry || !entry.payload) return Promise.resolve();
+  entry.uploading = true; entry.failed = false; entry.err = '';
+  tfRenderPhotos();
+  return tfPost(entry.payload).then(function(r){
+    entry.uploading = false;
+    entry.fileId = r.fileId;
+    entry.viewUrl = r.viewUrl;
+    entry.thumbnailUrl = r.thumbnailUrl;
+    entry.shared = !!r.shared;
+    if(r.shared === false){
+      showToast('Photo Drive me chali gayi, par link sabke liye open nahi hua','e');
+    }
+    var linkBox = document.getElementById('taskProofLink');
+    if(linkBox && !linkBox.value) linkBox.value = r.viewUrl;
+    tfAttachToTask(entry);
+    tfRenderPhotos();
+  }).catch(function(err){
+    entry.uploading = false;
+    entry.failed = true;
+    entry.err = String((err && err.message) || err);
+    tfRenderPhotos();
+  });
+}
+
+/* ek saath TF_CONC jobs, baaki queue me */
+function tfPool(jobs, n){
+  var i = 0;
+  function next(){
+    if(i >= jobs.length) return Promise.resolve();
+    var job = jobs[i++];
+    return job().then(next, next);
+  }
+  var runners = [];
+  for(var k = 0; k < Math.min(n, jobs.length); k++) runners.push(next());
+  return Promise.all(runners);
+}
+
+function tfFileName(t, meta){
+  var safe = function(s){ return String(s||'').replace(/[^\w\s-]/g,'').replace(/\s+/g,' ').trim().slice(0,40); };
+  return safe(t.name) + '__' + safe(meta.by) + '__' +
+         String(meta.when.getHours()).padStart(2,'0') + String(meta.when.getMinutes()).padStart(2,'0') +
+         '__' + Date.now() + '_' + Math.floor(Math.random()*1000) + '.jpg';
 }
 
 /* main handler */
@@ -2088,62 +2216,60 @@ function tfHandleFiles(fileList){
     showToast('Pehle Settings -> Data me Proof Upload Script URL daalein','e');
     return;
   }
-  var files = Array.prototype.slice.call(fileList || []);
+  var all = Array.prototype.slice.call(fileList || []);
+  var files = all.filter(function(f){ return /^image\//.test(f.type || ''); });
+  if(all.length && !files.length){ showToast('Sirf photo lag sakti hai','e'); return; }
   if(!files.length) return;
 
-  files.reduce(function(chain, file){
-    return chain.then(function(){
-      if(!/^image\//.test(file.type || '')){
-        showToast('Sirf photo lag sakti hai','e');
-        return;
-      }
-      var meta  = tfMeta(file, t);
-      var entry = { local:'', uploading:true, failed:false, at:meta.at, by:meta.by };
-      tfPhotos.push(entry);
-      tfRenderPhotos();
+  var taskId = t.id;
 
+  var jobs = files.map(function(file){
+    var meta  = tfMeta(file, t);
+    var entry = { local:'', uploading:true, failed:false, at:meta.at, by:meta.by, taskId:taskId };
+    tfPhotos.push(entry);
+    return function(){
       return tfProcess(file, meta).then(function(dataUrl){
         entry.local = dataUrl;
-        tfRenderPhotos();
-        var safe = function(s){ return String(s||'').replace(/[^\w\s-]/g,'').replace(/\s+/g,' ').trim().slice(0,40); };
-        var fname = safe(t.name) + '__' + safe(meta.by) + '__' +
-                    String(meta.when.getHours()).padStart(2,'0') + String(meta.when.getMinutes()).padStart(2,'0') +
-                    '__' + Date.now() + '.jpg';
-        return tfPost({
+        entry.payload = {
           action: 'uploadProof',
           imageData: dataUrl,
-          fileName: fname,
+          fileName: tfFileName(t, meta),
           dateKey: tfDateKey(meta.when),
           description: (t.name||'') + ' | ' + meta.at + ' | ' + meta.by
-        });
-      }).then(function(r){
-        if(r && r.success){
-          entry.uploading = false;
-          entry.fileId = r.fileId;
-          entry.viewUrl = r.viewUrl;
-          entry.thumbnailUrl = r.thumbnailUrl;
-          entry.shared = !!r.shared;
-          if(r.shared === false){
-            showToast('Photo Drive me chali gayi, par link sabke liye open nahi hua','e');
-          }
-          var linkBox = document.getElementById('taskProofLink');
-          if(linkBox && !linkBox.value) linkBox.value = r.viewUrl;
-        } else {
-          throw new Error((r && r.error) || 'Upload fail');
-        }
+        };
+        tfRenderPhotos();
+        return tfUploadOne(entry);
       }).catch(function(err){
         entry.uploading = false;
         entry.failed = true;
-        showToast('Photo upload fail - ' + (err.message || err), 'e');
-      }).then(function(){
+        entry.err = String((err && err.message) || err);
         tfRenderPhotos();
       });
-    });
-  }, Promise.resolve()).then(function(){
+    };
+  });
+
+  tfRenderPhotos();
+
+  tfPool(jobs, TF_CONC).then(function(){
     var okN = tfPhotos.filter(function(p){ return p.viewUrl; }).length;
-    if(okN) showToast('✓ ' + okN + ' photo taiyar - ab Mark Done ya Save dabaiye','s');
+    var bad = tfPhotos.filter(function(p){ return p.failed; }).length;
+    if(bad) showToast(bad + ' photo upload nahi hui - us photo par Retry dabaiye','e');
+    else if(okN) showToast('✓ ' + okN + ' photo taiyar - ab Mark Done ya Save dabaiye','s');
   });
 }
+
+/* Mark Done ab upload ka intezaar nahi karta - jo photo baad me
+   aayegi wo apne aap task me jud jayegi (tfAttachToTask). */
+(function tfNoWaitSave(){
+  var orig = (typeof saveTaskFromModal === 'function') ? saveTaskFromModal : null;
+  if(!orig) return;
+  window.saveTaskFromModal = function(status){
+    var n = tfInFlight();
+    var r = orig.apply(this, arguments);
+    if(n) showToast(n + ' photo background me ja rahi hai - poori hote hi task me jud jayegi','s');
+    return r;
+  };
+})();
 
 /* wire up (wait for the DOM so the buttons actually exist) */
 (function tfWire(){
